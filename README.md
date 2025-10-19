@@ -1,10 +1,12 @@
-# tte-c
+# :desktop_computer: `tte-c`
 
 A fast, lightweight C reimplementation of terminal text effects, providing the essential functionality of the Python `terminaltexteffects` library with significant performance improvements and precise output control.
 
+:information_source: _This is part of an "AI slop" porting experiment - testing methods leading to automated LLM-based software porting. Please reach out to [cpknight](mailto:chris@cpknight.io) for more information._
+
 ## Overview
 
-tte-c delivers the visual impact of terminal text effects with:
+`tte-c` delivers the visual impact of terminal text effects with:
 - **10x+ faster startup times** compared to Python version
 - **Lower memory footprint** for continuous operation
 - **Precise terminal control** including elimination of unwanted newlines
