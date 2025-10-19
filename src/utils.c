@@ -55,6 +55,12 @@ void print_usage(const char *program_name) {
     printf("  swarm     Characters swarm into position\n");
     printf("  highlight Scanning highlight bar reveals text\n");
     printf("  unstable  Characters jitter before settling\n");
+    printf("  crumble   Text crumbles to dust particles\n");
+    printf("  slice     Text revealed by slicing motions\n");
+    printf("  pour      Characters flow like liquid\n");
+    printf("  blackhole Gravitational pull with orbital motion\n");
+    printf("  rings     Expanding concentric rings reveal text\n");
+    printf("  synthgrid Synthwave-style grid with neon effects\n");
     printf("\nAnchor Points:\n");
     printf("  nw  n  ne     northwest  north  northeast\n");
     printf("  w   c   e  =  west      center east\n");
@@ -146,6 +152,18 @@ effect_func_t get_effect_function(const char *effect_name) {
         return effect_highlight;
     } else if (strcmp(effect_name, "unstable") == 0) {
         return effect_unstable;
+    } else if (strcmp(effect_name, "crumble") == 0) {
+        return effect_crumble;
+    } else if (strcmp(effect_name, "slice") == 0) {
+        return effect_slice;
+    } else if (strcmp(effect_name, "pour") == 0) {
+        return effect_pour;
+    } else if (strcmp(effect_name, "blackhole") == 0) {
+        return effect_blackhole;
+    } else if (strcmp(effect_name, "rings") == 0) {
+        return effect_rings;
+    } else if (strcmp(effect_name, "synthgrid") == 0) {
+        return effect_synthgrid;
     }
     return NULL;
 }

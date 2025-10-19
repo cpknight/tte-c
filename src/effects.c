@@ -619,3 +619,368 @@ void effect_unstable(terminal_t *term, int frame) {
         }
     }
 }
+
+void effect_crumble(terminal_t *term, int frame) {
+    // Text crumbling to dust - characters break apart and fall down
+    for (int i = 0; i < term->char_count; i++) {
+        character_t *ch = &term->chars[i];
+        
+        // Each character starts crumbling at different times based on position
+        int crumble_start = (ch->target.row * 10) + (ch->target.col * 3) + (i % 15);
+        int crumble_duration = 80;
+        
+        if (frame < crumble_start) {
+            // Character is still intact
+            ch->visible = 1;
+            ch->pos = ch->target;
+            ch->bold = 0;
+        } else if (frame < crumble_start + crumble_duration) {
+            // Character is crumbling - show falling motion
+            ch->visible = 1;
+            
+            int fall_time = frame - crumble_start;
+            float fall_progress = (float)fall_time / (float)crumble_duration;
+            
+            // Add some horizontal drift based on character index
+            int drift_seed = i * 1103515245 + 12345;
+            int drift_direction = (drift_seed & 1) ? 1 : -1;
+            int horizontal_drift = (int)(fall_progress * 3.0f * drift_direction);
+            
+            // Vertical falling motion with acceleration
+            int fall_distance = (int)(fall_progress * fall_progress * 15.0f);
+            
+            ch->pos.row = ch->target.row + fall_distance;
+            ch->pos.col = ch->target.col + horizontal_drift;
+            
+            // Fade and flicker as it crumbles
+            ch->bold = (rand() % 4 == 0) ? 0 : 1;
+            
+        } else {
+            // Character has finished crumbling - invisible
+            ch->visible = 0;
+            ch->active = 0;
+        }
+        
+        // Final cleanup - show all characters in final positions after effect
+        if (frame > crumble_start + crumble_duration + 60) {
+            ch->visible = 1;
+            ch->pos = ch->target;
+            ch->bold = 0;
+            ch->active = 0;
+        }
+    }
+}
+
+void effect_slice(terminal_t *term, int frame) {
+    // Text slicing from multiple directions - characters reveal as if cut by slicing motions
+    int num_slices = 4;
+    int slice_width = 3;
+    
+    for (int i = 0; i < term->char_count; i++) {
+        character_t *ch = &term->chars[i];
+        ch->visible = 0;
+        ch->bold = 0;
+        
+        int revealed = 0;
+        
+        // Multiple slicing motions from different angles
+        for (int slice_id = 0; slice_id < num_slices; slice_id++) {
+            int slice_start = slice_id * 20;
+            
+            if (frame >= slice_start) {
+                int slice_time = frame - slice_start;
+                
+                switch (slice_id) {
+                    case 0: // Horizontal slice from left
+                        if (slice_time * 2 >= ch->target.col - slice_width && 
+                            slice_time * 2 <= ch->target.col + slice_width) {
+                            revealed = 1;
+                            ch->bold = 1;
+                        }
+                        if (slice_time * 2 > ch->target.col + slice_width) {
+                            revealed = 1;
+                        }
+                        break;
+                        
+                    case 1: // Vertical slice from top
+                        if (slice_time >= ch->target.row - slice_width && 
+                            slice_time <= ch->target.row + slice_width) {
+                            revealed = 1;
+                            ch->bold = 1;
+                        }
+                        if (slice_time > ch->target.row + slice_width) {
+                            revealed = 1;
+                        }
+                        break;
+                        
+                    case 2: // Diagonal slice from top-left
+                        {
+                            int diagonal_pos = slice_time - (term->text_width + term->text_height) / 2;
+                            int char_diagonal = ch->target.col - ch->target.row;
+                            if (diagonal_pos >= char_diagonal - slice_width && 
+                                diagonal_pos <= char_diagonal + slice_width) {
+                                revealed = 1;
+                                ch->bold = 1;
+                            }
+                            if (diagonal_pos > char_diagonal + slice_width) {
+                                revealed = 1;
+                            }
+                        }
+                        break;
+                        
+                    case 3: // Diagonal slice from top-right
+                        {
+                            int diagonal_pos = slice_time - (term->text_width + term->text_height) / 2;
+                            int char_diagonal = ch->target.col + ch->target.row;
+                            if (diagonal_pos >= char_diagonal - slice_width && 
+                                diagonal_pos <= char_diagonal + slice_width) {
+                                revealed = 1;
+                                ch->bold = 1;
+                            }
+                            if (diagonal_pos > char_diagonal + slice_width) {
+                                revealed = 1;
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+        
+        if (revealed) {
+            ch->visible = 1;
+            ch->pos = ch->target;
+        }
+        
+        // Final cleanup
+        if (frame > 120) {
+            ch->visible = 1;
+            ch->pos = ch->target;
+            ch->bold = 0;
+            ch->active = 0;
+        }
+    }
+}
+
+void effect_pour(terminal_t *term, int frame) {
+    // Liquid pouring effect - characters flow like liquid from top to bottom
+    int pour_speed = 2;
+    
+    for (int i = 0; i < term->char_count; i++) {
+        character_t *ch = &term->chars[i];
+        
+        // Start pouring from different columns at different times
+        int pour_start = ch->target.col * 8;
+        
+        if (frame >= pour_start) {
+            ch->visible = 1;
+            
+            // Calculate liquid flow position
+            int pour_time = frame - pour_start;
+            int flow_row = (pour_time * pour_speed) - term->text_height;
+            
+            // Add some horizontal spreading like liquid
+            int spread_seed = (ch->target.col * 31 + pour_time / 5) % 100;
+            int spread = (spread_seed < 20) ? -1 : (spread_seed > 80) ? 1 : 0;
+            
+            // Characters appear as the liquid "pours" past them
+            if (flow_row >= ch->target.row) {
+                ch->pos = ch->target;
+                ch->pos.col += spread;  // Add liquid spreading
+                
+                // Liquid-like wobbling motion
+                float wobble = sin((float)frame * 0.3f + ch->target.col * 0.5f) * 0.5f;
+                ch->pos.col += (int)wobble;
+                
+                // Bright while liquid is actively flowing
+                ch->bold = (flow_row - ch->target.row < 5) ? 1 : 0;
+            } else {
+                ch->visible = 0;
+            }
+            
+            // Eventually settle to final position
+            if (frame > pour_start + term->text_height * 2 + 40) {
+                ch->pos = ch->target;
+                ch->bold = 0;
+                ch->active = 0;
+            }
+        }
+    }
+}
+
+void effect_blackhole(terminal_t *term, int frame) {
+    // Gravitational text distortion - characters get pulled toward center point
+    int center_row = term->text_height / 2;
+    int center_col = term->text_width / 2;
+    int effect_duration = 100;
+    
+    for (int i = 0; i < term->char_count; i++) {
+        character_t *ch = &term->chars[i];
+        
+        ch->visible = 1;
+        
+        if (frame < effect_duration) {
+            // Calculate gravitational pull toward center
+            int dx = center_col - ch->target.col;
+            int dy = center_row - ch->target.row;
+            float distance = sqrt(dx * dx + dy * dy);
+            
+            if (distance > 0) {
+                // Calculate orbital motion progress
+                float progress = (float)frame / (float)effect_duration;
+                
+                // Apply orbital motion
+                float angle_offset = frame * 0.1f + i * 0.3f;
+                float orbit_radius = distance * (1.0f - progress * 0.7f);
+                
+                ch->pos.col = center_col + (int)(cos(angle_offset) * orbit_radius);
+                ch->pos.row = center_row + (int)(sin(angle_offset) * orbit_radius);
+                
+                // Characters get brighter as they approach center
+                ch->bold = (distance < 8) ? 1 : 0;
+            } else {
+                ch->pos = ch->target;
+            }
+            
+        } else {
+            // Characters return to original positions
+            int return_time = frame - effect_duration;
+            int return_duration = 60;
+            
+            if (return_time < return_duration) {
+                float return_progress = (float)return_time / (float)return_duration;
+                
+                // Ease-out motion back to original position
+                float ease_progress = 1.0f - powf(1.0f - return_progress, 3.0f);
+                
+                // Get current orbital position
+                int dx = center_col - ch->target.col;
+                int dy = center_row - ch->target.row;
+                float distance = sqrt(dx * dx + dy * dy);
+                float angle_offset = effect_duration * 0.1f + i * 0.3f;
+                float orbit_radius = distance * 0.3f;
+                
+                int orbit_col = center_col + (int)(cos(angle_offset) * orbit_radius);
+                int orbit_row = center_row + (int)(sin(angle_offset) * orbit_radius);
+                
+                ch->pos.col = orbit_col + (int)((ch->target.col - orbit_col) * ease_progress);
+                ch->pos.row = orbit_row + (int)((ch->target.row - orbit_row) * ease_progress);
+                
+                ch->bold = 0;
+            } else {
+                ch->pos = ch->target;
+                ch->bold = 0;
+                ch->active = 0;
+            }
+        }
+    }
+}
+
+void effect_rings(terminal_t *term, int frame) {
+    // Expanding ring effects - concentric rings expand outward revealing text
+    int center_row = term->text_height / 2;
+    int center_col = term->text_width / 2;
+    int num_rings = 5;
+    int ring_delay = 15;
+    int ring_width = 3;
+    
+    for (int i = 0; i < term->char_count; i++) {
+        character_t *ch = &term->chars[i];
+        
+        ch->visible = 0;
+        ch->bold = 0;
+        
+        // Calculate distance from center
+        int dx = ch->target.col - center_col;
+        int dy = ch->target.row - center_row;
+        float distance = sqrt(dx * dx + dy * dy);
+        
+        // Check if character is revealed by any expanding ring
+        for (int ring_id = 0; ring_id < num_rings; ring_id++) {
+            int ring_start = ring_id * ring_delay;
+            
+            if (frame >= ring_start) {
+                int ring_time = frame - ring_start;
+                float ring_radius = ring_time * 0.8f;
+                
+                // Character is revealed when ring passes over it
+                if (ring_radius >= distance - ring_width && 
+                    ring_radius <= distance + ring_width) {
+                    ch->visible = 1;
+                    ch->pos = ch->target;
+                    ch->bold = 1;  // Bright ring edge
+                    break;
+                } else if (ring_radius > distance + ring_width) {
+                    // Ring has passed - character remains visible
+                    ch->visible = 1;
+                    ch->pos = ch->target;
+                    // Keep existing bold state from inner rings
+                }
+            }
+        }
+        
+        // Final cleanup
+        if (frame > 150) {
+            ch->visible = 1;
+            ch->pos = ch->target;
+            ch->bold = 0;
+            ch->active = 0;
+        }
+    }
+}
+
+void effect_synthgrid(terminal_t *term, int frame) {
+    // Synthwave grid backgrounds - retro-style grid with neon highlighting  
+    int grid_spacing = 6;
+    int scan_speed = 2;
+    
+    for (int i = 0; i < term->char_count; i++) {
+        character_t *ch = &term->chars[i];
+        
+        ch->visible = 1;
+        ch->pos = ch->target;
+        
+        // Create synthwave grid effect
+        int is_grid_line = ((ch->target.row % grid_spacing) == 0) || 
+                          ((ch->target.col % grid_spacing) == 0);
+        
+        // Scanning line effect
+        int scan_line = (frame * scan_speed) % (term->text_height + 20);
+        int is_scan_line = (ch->target.row == scan_line) || 
+                          (abs(ch->target.row - scan_line) == 1);
+        
+        // Perspective grid lines (getting closer at bottom)
+        int perspective_divisor = (term->text_height > 2) ? (term->text_height / 2) : 1;
+        int perspective_line = term->text_height - 1 - 
+                              ((frame / 3) % perspective_divisor);
+        int is_perspective = (ch->target.row == perspective_line);
+        
+        // Color and brightness based on grid position
+        if (is_scan_line) {
+            // Bright scanning line - use cyan/white
+            ch->color_fg = 51;   // Bright cyan
+            ch->bold = 1;
+        } else if (is_perspective) {
+            // Perspective lines - magenta
+            ch->color_fg = 201;  // Bright magenta  
+            ch->bold = 1;
+        } else if (is_grid_line) {
+            // Grid lines - dark blue
+            ch->color_fg = 25;   // Dark blue
+            ch->bold = 0;
+        } else {
+            // Regular text - use gradient colors (will be set by gradient system)
+            ch->bold = 0;
+        }
+        
+        // Add some flicker to grid lines for retro effect
+        if (is_grid_line && frame % 8 == 0) {
+            ch->bold = (rand() % 10 < 3) ? 1 : 0;
+        }
+        
+        // Effect completes after several scan cycles
+        if (frame > 200) {
+            ch->bold = 0;  // Return to gradient colors
+            ch->active = 0;
+        }
+    }
+}

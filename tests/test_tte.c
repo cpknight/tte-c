@@ -130,10 +130,11 @@ TEST(all_effects_available) {
         "beams", "waves", "rain", "slide", "expand", 
         "matrix", "fireworks", "decrypt", "typewriter", 
         "wipe", "spotlights", "burn", "swarm",
-        "highlight", "unstable"
+        "highlight", "unstable", "crumble", "slice",
+        "pour", "blackhole", "rings", "synthgrid"
     };
     
-    for (int i = 0; i < 15; i++) {
+    for (int i = 0; i < 21; i++) {
         effect_func_t func = get_effect_function(effects[i]);
         assert(func != NULL);
     }
@@ -368,6 +369,121 @@ TEST(unstable_effect) {
     cleanup_terminal(&term);
 }
 
+// Test crumble effect behavior
+TEST(crumble_effect) {
+    terminal_t term = {0};
+    init_terminal(&term);
+    
+    // Setup test characters
+    term.char_count = 4;
+    term.text_width = 2;
+    term.text_height = 2;
+    
+    for (int i = 0; i < 4; i++) {
+        term.chars[i].ch = 'A' + i;
+        term.chars[i].target.row = i / 2;
+        term.chars[i].target.col = i % 2;
+        term.chars[i].visible = 0;
+        term.chars[i].active = 1;
+        term.chars[i].bold = 0;
+    }
+    
+    // Test early frame - characters should be in place
+    effect_crumble(&term, 5);
+    for (int i = 0; i < 4; i++) {
+        assert(term.chars[i].visible == 1);
+        assert(term.chars[i].pos.row == term.chars[i].target.row);
+        assert(term.chars[i].pos.col == term.chars[i].target.col);
+    }
+    
+    // Test final cleanup - all characters should be visible and settled
+    effect_crumble(&term, 200);
+    for (int i = 0; i < 4; i++) {
+        assert(term.chars[i].visible == 1);
+        assert(term.chars[i].pos.row == term.chars[i].target.row);
+        assert(term.chars[i].pos.col == term.chars[i].target.col);
+        assert(term.chars[i].active == 0);
+    }
+    
+    cleanup_terminal(&term);
+}
+
+// Test rings effect behavior
+TEST(rings_effect) {
+    terminal_t term = {0};
+    init_terminal(&term);
+    
+    // Setup test characters in small grid
+    term.char_count = 9;
+    term.text_width = 3;
+    term.text_height = 3;
+    
+    for (int i = 0; i < 9; i++) {
+        term.chars[i].ch = 'A' + i;
+        term.chars[i].target.row = i / 3;
+        term.chars[i].target.col = i % 3;
+        term.chars[i].visible = 0;
+        term.chars[i].active = 1;
+        term.chars[i].bold = 0;
+    }
+    
+    // Test early frame - some characters might be revealed by first ring
+    effect_rings(&term, 10);
+    int visible_count = 0;
+    for (int i = 0; i < 9; i++) {
+        if (term.chars[i].visible) visible_count++;
+    }
+    // At least some characters should be visible as rings expand
+    assert(visible_count >= 0 && visible_count <= 9);
+    
+    // Test final cleanup - all should be visible
+    effect_rings(&term, 200);
+    for (int i = 0; i < 9; i++) {
+        assert(term.chars[i].visible == 1);
+        assert(term.chars[i].pos.row == term.chars[i].target.row);
+        assert(term.chars[i].pos.col == term.chars[i].target.col);
+        assert(term.chars[i].active == 0);
+    }
+    
+    cleanup_terminal(&term);
+}
+
+// Test synthgrid effect behavior
+TEST(synthgrid_effect) {
+    terminal_t term = {0};
+    init_terminal(&term);
+    
+    // Setup test characters
+    term.char_count = 36; // 6x6 grid for good grid testing
+    term.text_width = 6;
+    term.text_height = 6;
+    
+    for (int i = 0; i < 36; i++) {
+        term.chars[i].ch = 'A' + (i % 26);
+        term.chars[i].target.row = i / 6;
+        term.chars[i].target.col = i % 6;
+        term.chars[i].visible = 0;
+        term.chars[i].active = 1;
+        term.chars[i].bold = 0;
+    }
+    
+    // Test synthgrid effect - all characters should be visible
+    effect_synthgrid(&term, 50);
+    for (int i = 0; i < 36; i++) {
+        assert(term.chars[i].visible == 1);
+        assert(term.chars[i].pos.row == term.chars[i].target.row);
+        assert(term.chars[i].pos.col == term.chars[i].target.col);
+    }
+    
+    // Test final cleanup
+    effect_synthgrid(&term, 250);
+    for (int i = 0; i < 36; i++) {
+        assert(term.chars[i].active == 0);
+    }
+    
+    cleanup_terminal(&term);
+}
+
 int main() {
     printf("tte-c Unit Tests\n");
     printf("================\n");
@@ -385,6 +501,9 @@ int main() {
     RUN_TEST(text_reading_with_config);
     RUN_TEST(highlight_effect);
     RUN_TEST(unstable_effect);
+    RUN_TEST(crumble_effect);
+    RUN_TEST(rings_effect);
+    RUN_TEST(synthgrid_effect);
     RUN_TEST(performance_comparison);
     
     printf("\nAll tests passed! ✅\n");

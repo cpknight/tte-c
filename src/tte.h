@@ -142,6 +142,12 @@ void effect_burn(terminal_t *term, int frame);
 void effect_swarm(terminal_t *term, int frame);
 void effect_highlight(terminal_t *term, int frame);
 void effect_unstable(terminal_t *term, int frame);
+void effect_crumble(terminal_t *term, int frame);
+void effect_slice(terminal_t *term, int frame);
+void effect_pour(terminal_t *term, int frame);
+void effect_blackhole(terminal_t *term, int frame);
+void effect_rings(terminal_t *term, int frame);
+void effect_synthgrid(terminal_t *term, int frame);
 
 // Utility functions
 void parse_args(int argc, char *argv[], config_t *config);

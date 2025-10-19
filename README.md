@@ -18,7 +18,7 @@ A fast, lightweight C reimplementation of terminal text effects, providing the e
 
 ## Features
 
-### Visual Effects (15 implemented)
+### Visual Effects (21 implemented)
 - ✅ `beams` - **Multiple directional light beams** sweep across canvas → **8-stop blue-cyan-white gradient**
 - ✅ `waves` - Wave motion with dynamic brightness → **8-stop blue-cyan-white gradient**
 - ✅ `rain` - Characters fall like rain with brightness effects → **8-stop blue-cyan-white gradient**  
@@ -123,6 +123,14 @@ echo "Custom Tab Width" | ./tte-c --tab-width 8 --wrap-text slide
 # New effects
 echo "Diagonal Highlight" | ./tte-c highlight
 echo "Explosive Assembly" | ./tte-c --anchor-text c unstable
+
+# Medium priority effects
+echo "Crumbling Text" | ./tte-c crumble
+echo "Sliced Reveal" | ./tte-c slice
+echo "Liquid Flow" | ./tte-c pour
+echo "Black Hole" | ./tte-c --anchor-text c blackhole
+echo "Expanding Rings" | ./tte-c --anchor-text c rings
+echo "Synthwave Grid" | ./tte-c synthgrid
 ```
 
 ## Remaining Features to Port
@@ -136,13 +144,13 @@ echo "Explosive Assembly" | ./tte-c --anchor-text c unstable
 
 ### Medium Priority (Visual Effects)
 - ✅ `burn` - Vertical burning reveal with flicker **IMPLEMENTED**
-- ❌ `crumble` - Text crumbling to dust
-- ❌ `slice` - Text slicing from multiple directions
-- ❌ `pour` - Liquid pouring effect
-- ❌ `blackhole` - Gravitational text distortion
-- ❌ `rings` - Expanding ring effects
+- ✅ `crumble` - Text crumbling to dust **IMPLEMENTED**
+- ✅ `slice` - Text slicing from multiple directions **IMPLEMENTED**
+- ✅ `pour` - Liquid pouring effect **IMPLEMENTED**
+- ✅ `blackhole` - Gravitational text distortion **IMPLEMENTED**
+- ✅ `rings` - Expanding ring effects **IMPLEMENTED**
 - ✅ `swarm` - Characters swarm into position **IMPLEMENTED**
-- ❌ `synthgrid` - Synthwave grid backgrounds
+- ✅ `synthgrid` - Synthwave grid backgrounds **IMPLEMENTED**
 
 ### Advanced Features (Original tte)
 - ❌ **Easing functions** (25+ animation curves)
