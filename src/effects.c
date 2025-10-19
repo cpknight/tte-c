@@ -392,3 +392,108 @@ void effect_decrypt(terminal_t *term, int frame) {
         }
     }
 }
+
+void effect_highlight(terminal_t *term, int frame) {
+    // Specular highlight that runs diagonally across the text
+    int highlight_width = 8;
+    float highlight_speed = 1.5f;
+    
+    for (int i = 0; i < term->char_count; i++) {
+        character_t *ch = &term->chars[i];
+        
+        // All characters are visible from the start
+        ch->visible = 1;
+        ch->pos = ch->target;
+        
+        // Calculate diagonal highlight position (bottom-left to top-right)
+        float diagonal_pos = (frame * highlight_speed) - (term->text_width + term->text_height);
+        float char_diagonal = ch->target.col - ch->target.row; // Diagonal coordinate
+        
+        // Character is highlighted when diagonal sweep passes over it
+        if (diagonal_pos >= char_diagonal - highlight_width && 
+            diagonal_pos <= char_diagonal + highlight_width) {
+            // Calculate highlight intensity based on distance from center
+            float distance = fabs(diagonal_pos - char_diagonal);
+            float intensity = 1.0f - (distance / highlight_width);
+            
+            // Brighten character during highlight with intensity falloff
+            ch->bold = (intensity > 0.3f) ? 1 : 0;
+        } else {
+            // Normal gradient color when not highlighted
+            ch->bold = 0;
+        }
+        
+        // Effect completes when highlight has passed all characters
+        if (diagonal_pos > term->text_width + highlight_width) {
+            ch->active = 0;
+        }
+    }
+}
+
+void effect_unstable(terminal_t *term, int frame) {
+    // Characters spawn jumbled, explode to canvas edges, then reassemble
+    int center_row = term->text_height / 2;
+    int center_col = term->text_width / 2;
+    int explosion_duration = 40;
+    int reassembly_duration = 60;
+    
+    for (int i = 0; i < term->char_count; i++) {
+        character_t *ch = &term->chars[i];
+        
+        ch->visible = 1;
+        
+        if (frame < explosion_duration) {
+            // Phase 1: Explosion - characters move from center to edges
+            float progress = (float)frame / (float)explosion_duration;
+            
+            // Calculate explosion direction for this character
+            int seed = i * 1103515245 + 12345;
+            float angle = ((seed & 0xFFFF) / 65535.0f) * 2.0f * M_PI;
+            
+            // Explosion distance increases over time
+            int explosion_radius = (int)(progress * (term->text_width + term->text_height));
+            
+            ch->pos.row = center_row + (int)(sin(angle) * explosion_radius);
+            ch->pos.col = center_col + (int)(cos(angle) * explosion_radius);
+            
+            // Orange/red unstable color during explosion
+            ch->color_fg = 208;  // Orange
+            ch->bold = 1;
+            
+        } else if (frame < explosion_duration + reassembly_duration) {
+            // Phase 2: Reassembly - characters move from edges to final positions
+            int reassembly_frame = frame - explosion_duration;
+            float progress = (float)reassembly_frame / (float)reassembly_duration;
+            
+            // Ease-out motion (exponential decay)
+            float ease_progress = 1.0f - powf(1.0f - progress, 3.0f);
+            
+            // Calculate starting position from explosion
+            int seed = i * 1103515245 + 12345;
+            float angle = ((seed & 0xFFFF) / 65535.0f) * 2.0f * M_PI;
+            int explosion_radius = term->text_width + term->text_height;
+            
+            int start_row = center_row + (int)(sin(angle) * explosion_radius);
+            int start_col = center_col + (int)(cos(angle) * explosion_radius);
+            
+            // Interpolate from explosion position to target
+            ch->pos.row = start_row + (int)((ch->target.row - start_row) * ease_progress);
+            ch->pos.col = start_col + (int)((ch->target.col - start_col) * ease_progress);
+            
+            // Transition from unstable color to gradient
+            if (progress < 0.5f) {
+                ch->color_fg = 208;  // Orange
+                ch->bold = 1;
+            } else {
+                // Return to gradient color (will be set by gradient system)
+                ch->bold = 0;
+            }
+            
+        } else {
+            // Phase 3: Stable - characters at final positions
+            ch->pos = ch->target;
+            ch->bold = 0;  // Normal gradient color
+            ch->active = 0;
+        }
+    }
+}

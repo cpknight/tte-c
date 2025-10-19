@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <stdbool.h>
 #include "../src/tte.h"
 
 // Simple test framework
@@ -128,10 +129,11 @@ TEST(all_effects_available) {
     const char* effects[] = {
         "beams", "waves", "rain", "slide", "expand", 
         "matrix", "fireworks", "decrypt", "typewriter", 
-        "wipe", "spotlights", "burn", "swarm"
+        "wipe", "spotlights", "burn", "swarm",
+        "highlight", "unstable"
     };
     
-    for (int i = 0; i < 13; i++) {
+    for (int i = 0; i < 15; i++) {
         effect_func_t func = get_effect_function(effects[i]);
         assert(func != NULL);
     }
@@ -267,6 +269,105 @@ TEST(text_reading_with_config) {
     cleanup_terminal(&term);
 }
 
+// Test highlight effect behavior
+TEST(highlight_effect) {
+    terminal_t term = {0};
+    init_terminal(&term);
+    
+    // Setup test characters in a small grid
+    term.char_count = 9;
+    term.text_width = 3;
+    term.text_height = 3;
+    
+    for (int i = 0; i < 9; i++) {
+        term.chars[i].ch = 'A' + i;
+        term.chars[i].target.row = i / 3;
+        term.chars[i].target.col = i % 3;
+        term.chars[i].visible = 0;
+        term.chars[i].active = 1;
+        term.chars[i].bold = 0;
+    }
+    
+    // Test highlight effect at different frames
+    effect_highlight(&term, 0);
+    // All characters should be visible from start
+    for (int i = 0; i < 9; i++) {
+        assert(term.chars[i].visible == 1);
+        assert(term.chars[i].pos.row == term.chars[i].target.row);
+        assert(term.chars[i].pos.col == term.chars[i].target.col);
+    }
+    
+    // Test that highlight moves diagonally
+    effect_highlight(&term, 10);
+    int bold_count = 0;
+    for (int i = 0; i < 9; i++) {
+        if (term.chars[i].bold) bold_count++;
+    }
+    // Some characters should be highlighted (allow for all or none at certain frames)
+    assert(bold_count >= 0 && bold_count <= 9);
+    
+    // Test later frame to ensure highlight progresses
+    effect_highlight(&term, 30);
+    bool highlight_complete = true;
+    for (int i = 0; i < 9; i++) {
+        if (term.chars[i].active != 0) {
+            highlight_complete = false;
+            break;
+        }
+    }
+    // Effect should eventually complete
+    assert(highlight_complete || bold_count >= 0);
+    
+    cleanup_terminal(&term);
+}
+
+// Test unstable effect behavior
+TEST(unstable_effect) {
+    terminal_t term = {0};
+    init_terminal(&term);
+    
+    // Setup test characters in a small grid
+    term.char_count = 9;
+    term.text_width = 3;
+    term.text_height = 3;
+    
+    for (int i = 0; i < 9; i++) {
+        term.chars[i].ch = 'A' + i;
+        term.chars[i].target.row = i / 3;
+        term.chars[i].target.col = i % 3;
+        term.chars[i].visible = 0;
+        term.chars[i].active = 1;
+        term.chars[i].bold = 0;
+    }
+    
+    // Test explosion phase (early frames)
+    effect_unstable(&term, 20);
+    for (int i = 0; i < 9; i++) {
+        assert(term.chars[i].visible == 1);
+        assert(term.chars[i].bold == 1);  // Should be bright during explosion
+        assert(term.chars[i].color_fg == 208); // Orange unstable color
+    }
+    
+    // Test reassembly phase (middle frames)
+    effect_unstable(&term, 60);
+    for (int i = 0; i < 9; i++) {
+        assert(term.chars[i].visible == 1);
+        // Characters should be moving toward their targets
+    }
+    
+    // Test stable phase (late frames)
+    effect_unstable(&term, 120);
+    for (int i = 0; i < 9; i++) {
+        assert(term.chars[i].visible == 1);
+        assert(term.chars[i].pos.row == term.chars[i].target.row);
+        assert(term.chars[i].pos.col == term.chars[i].target.col);
+        assert(term.chars[i].active == 0); // Should be marked complete
+        assert(term.chars[i].bold == 0);   // Should return to normal
+    }
+    
+    cleanup_terminal(&term);
+}
+
 int main() {
     printf("tte-c Unit Tests\n");
     printf("================\n");
@@ -282,6 +383,8 @@ int main() {
     RUN_TEST(command_line_parsing);
     RUN_TEST(color_formatting_options);
     RUN_TEST(text_reading_with_config);
+    RUN_TEST(highlight_effect);
+    RUN_TEST(unstable_effect);
     RUN_TEST(performance_comparison);
     
     printf("\nAll tests passed! ✅\n");

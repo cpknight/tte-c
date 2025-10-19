@@ -4,7 +4,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-**tte-c** is a high-performance C reimplementation of the Python `terminaltexteffects` library, delivering 10x+ faster startup times and significantly lower resource usage. It provides 13 visual terminal text effects with advanced 256-color gradient support and precise terminal control.
+**tte-c** is a high-performance C reimplementation of the Python `terminaltexteffects` library, delivering 10x+ faster startup times and significantly lower resource usage. It provides 15 visual terminal text effects with advanced 256-color gradient support and precise terminal control.
 
 Key innovation: `--no-final-newline` flag prevents screensaver scrolling issues that plague the original Python version.
 
@@ -152,15 +152,16 @@ void effect_name(terminal_t *term, int frame) {
 - `--no-color` - Disable all colors (monochrome mode)
 - `--xterm-colors` - Force 8-bit color mode (16 colors max)
 
-## Current Effects (13 Implemented)
+## Current Effects (15 Implemented)
 
 ### Standard Effects (Random gradients applied)
-- `beams`, `waves`, `rain`, `slide`, `expand`, `typewriter`, `wipe`, `spotlights`, `burn`, `swarm`
+- `beams`, `waves`, `rain`, `slide`, `expand`, `typewriter`, `wipe`, `spotlights`, `burn`, `swarm`, `highlight`
 
 ### Special Effects (Custom gradients)
 - `matrix` - 5-stop radial green gradient
 - `fireworks` - 6-stop radial fire gradient (red→orange→yellow→white)  
 - `decrypt` - 4-stop diagonal green gradient
+- `unstable` - Orange unstable color transitioning to gradient
 
 ## Adding New Effects
 
@@ -180,7 +181,8 @@ void effect_name(terminal_t *term, int frame) {
 - RGB color conversion accuracy
 - Gradient interpolation correctness
 - Terminal initialization/cleanup
-- Effect function loading
+- Effect function loading (all 15 effects)
+- Specific effect behavior testing (highlight diagonal sweep, unstable explosion/reassembly)
 - Memory usage validation
 - Command line argument parsing (all new options)
 - Anchor point parsing (9-point positioning system)

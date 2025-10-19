@@ -18,7 +18,7 @@ A fast, lightweight C reimplementation of terminal text effects, providing the e
 
 ## Features
 
-### Visual Effects (13 implemented)
+### Visual Effects (15 implemented)
 - ✅ `beams` - Light beams sweep across text → **8-stop blue-cyan-white gradient**
 - ✅ `waves` - Wave motion with dynamic brightness → **8-stop blue-cyan-white gradient**
 - ✅ `rain` - Characters fall like rain with brightness effects → **8-stop blue-cyan-white gradient**  
@@ -32,6 +32,8 @@ A fast, lightweight C reimplementation of terminal text effects, providing the e
 - ✅ `spotlights` - Moving spotlight illumination → **Random direction gradient**
 - ✅ `burn` - Vertical burning reveal with flicker → **Random direction gradient**
 - ✅ `swarm` - Characters swarm into position → **Random direction gradient**
+- ✅ `highlight` - Specular highlight sweeps diagonally across text → **Random direction gradient**
+- ✅ `unstable` - Characters explode from center then reassemble → **Orange unstable color → gradient**
 
 ### Technical Features
 - **256-color palette** - Full xterm-256 color support with RGB conversion
@@ -117,16 +119,20 @@ echo "Top Left" | ./tte-c --anchor-text nw --anchor-canvas nw waves
 echo "No Colors" | ./tte-c --no-color typewriter
 echo "8-bit Colors" | ./tte-c --xterm-colors matrix
 echo "Custom Tab Width" | ./tte-c --tab-width 8 --wrap-text slide
+
+# New effects
+echo "Diagonal Highlight" | ./tte-c highlight
+echo "Explosive Assembly" | ./tte-c --anchor-text c unstable
 ```
 
 ## Remaining Features to Port
 
 ### High Priority (Common Effects)
-- ❌ `highlight` - Specular highlight sweep
+- ✅ `highlight` - Specular highlight sweep **IMPLEMENTED**
 - ✅ `typewriter` - Sequential character typing **IMPLEMENTED**
 - ✅ `wipe` - Left-to-right reveal wipe **IMPLEMENTED**
 - ✅ `spotlights` - Moving spotlight illumination **IMPLEMENTED**
-- ❌ `unstable` - Glitchy character positioning
+- ✅ `unstable` - Characters explode and reassemble **IMPLEMENTED**
 
 ### Medium Priority (Visual Effects)
 - ✅ `burn` - Vertical burning reveal with flicker **IMPLEMENTED**

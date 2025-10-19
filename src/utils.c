@@ -53,6 +53,8 @@ void print_usage(const char *program_name) {
     printf("  spotlights Moving spotlight illumination\n");
     printf("  burn      Vertical burning reveal with flicker\n");
     printf("  swarm     Characters swarm into position\n");
+    printf("  highlight Scanning highlight bar reveals text\n");
+    printf("  unstable  Characters jitter before settling\n");
     printf("\nAnchor Points:\n");
     printf("  nw  n  ne     northwest  north  northeast\n");
     printf("  w   c   e  =  west      center east\n");
@@ -140,6 +142,10 @@ effect_func_t get_effect_function(const char *effect_name) {
         return effect_burn;
     } else if (strcmp(effect_name, "swarm") == 0) {
         return effect_swarm;
+    } else if (strcmp(effect_name, "highlight") == 0) {
+        return effect_highlight;
+    } else if (strcmp(effect_name, "unstable") == 0) {
+        return effect_unstable;
     }
     return NULL;
 }

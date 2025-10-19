@@ -140,6 +140,8 @@ void effect_wipe(terminal_t *term, int frame);
 void effect_spotlights(terminal_t *term, int frame);
 void effect_burn(terminal_t *term, int frame);
 void effect_swarm(terminal_t *term, int frame);
+void effect_highlight(terminal_t *term, int frame);
+void effect_unstable(terminal_t *term, int frame);
 
 // Utility functions
 void parse_args(int argc, char *argv[], config_t *config);
