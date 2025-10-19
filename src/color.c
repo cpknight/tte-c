@@ -80,24 +80,40 @@ rgb_color_t interpolate_rgb(rgb_color_t color1, rgb_color_t color2, float progre
 }
 
 rgb_color_t interpolate_gradient(rgb_color_t *stops, int count, float position) {
-    if (count <= 1) {
-        return count == 1 ? stops[0] : (rgb_color_t){255, 255, 255};
+    // Bounds checking
+    if (!stops || count <= 0) {
+        return (rgb_color_t){255, 255, 255}; // Default white
     }
     
-    // Clamp position
+    if (count == 1) {
+        return stops[0];
+    }
+    
+    // Clamp position to valid range
     if (position <= 0.0f) return stops[0];
     if (position >= 1.0f) return stops[count - 1];
     
+    // Check for invalid position (NaN, infinity)
+    if (position != position || position < 0.0f || position > 1.0f) {
+        return stops[0]; // Return first color for invalid positions
+    }
+    
     // Find which segment we're in
-    float segment_size = 1.0f / (count - 1);
+    float segment_size = 1.0f / (float)(count - 1);
     int segment = (int)(position / segment_size);
     
+    // Bounds checking for segment
+    if (segment < 0) segment = 0;
     if (segment >= count - 1) {
         return stops[count - 1];
     }
     
     // Local position within this segment
     float local_pos = (position - (segment * segment_size)) / segment_size;
+    
+    // Clamp local position
+    if (local_pos < 0.0f) local_pos = 0.0f;
+    if (local_pos > 1.0f) local_pos = 1.0f;
     
     return interpolate_rgb(stops[segment], stops[segment + 1], local_pos);
 }
@@ -106,49 +122,71 @@ float calculate_gradient_position(int row, int col, int width, int height,
                                 gradient_direction_t direction, float angle) {
     float position = 0.0f;
     
+    // Protect against invalid dimensions
+    if (width <= 0 || height <= 0) {
+        return 0.0f;
+    }
+    
     switch (direction) {
         case GRADIENT_HORIZONTAL:
-            position = (float)col / (float)(width - 1);
+            position = (width > 1) ? (float)col / (float)(width - 1) : 0.0f;
             break;
             
         case GRADIENT_VERTICAL:
-            position = (float)row / (float)(height - 1);
+            position = (height > 1) ? (float)row / (float)(height - 1) : 0.0f;
             break;
             
         case GRADIENT_DIAGONAL:
             // Diagonal from top-left to bottom-right
-            position = ((float)col / (float)(width - 1) + (float)row / (float)(height - 1)) / 2.0f;
+            if (width > 1 && height > 1) {
+                position = ((float)col / (float)(width - 1) + (float)row / (float)(height - 1)) / 2.0f;
+            } else {
+                position = 0.0f;
+            }
             break;
             
         case GRADIENT_RADIAL:
             // Radial from center
             {
-                float center_x = (width - 1) / 2.0f;
-                float center_y = (height - 1) / 2.0f;
-                float dx = col - center_x;
-                float dy = row - center_y;
-                float distance = sqrt(dx * dx + dy * dy);
-                float max_distance = sqrt(center_x * center_x + center_y * center_y);
-                position = distance / max_distance;
+                if (width == 1 && height == 1) {
+                    position = 0.0f;
+                } else {
+                    float center_x = (width - 1) / 2.0f;
+                    float center_y = (height - 1) / 2.0f;
+                    float dx = col - center_x;
+                    float dy = row - center_y;
+                    float distance = sqrt(dx * dx + dy * dy);
+                    float max_distance = sqrt(center_x * center_x + center_y * center_y);
+                    
+                    if (max_distance > 0.0f) {
+                        position = distance / max_distance;
+                    } else {
+                        position = 0.0f;
+                    }
+                }
             }
             break;
             
         case GRADIENT_ANGLE:
             // Custom angle gradient
             {
-                float rad = angle * M_PI / 180.0f;
-                float cos_a = cos(rad);
-                float sin_a = sin(rad);
-                
-                // Normalize coordinates to [-1, 1]
-                float x = (2.0f * col / (width - 1)) - 1.0f;
-                float y = (2.0f * row / (height - 1)) - 1.0f;
-                
-                // Project onto angle direction
-                float projected = x * cos_a + y * sin_a;
-                
-                // Convert to [0, 1]
-                position = (projected + sqrt(2.0f)) / (2.0f * sqrt(2.0f));
+                if (width > 1 && height > 1) {
+                    float rad = angle * M_PI / 180.0f;
+                    float cos_a = cos(rad);
+                    float sin_a = sin(rad);
+                    
+                    // Normalize coordinates to [-1, 1]
+                    float x = (2.0f * col / (float)(width - 1)) - 1.0f;
+                    float y = (2.0f * row / (float)(height - 1)) - 1.0f;
+                    
+                    // Project onto angle direction
+                    float projected = x * cos_a + y * sin_a;
+                    
+                    // Convert to [0, 1]
+                    position = (projected + sqrt(2.0f)) / (2.0f * sqrt(2.0f));
+                } else {
+                    position = 0.0f;
+                }
             }
             break;
     }

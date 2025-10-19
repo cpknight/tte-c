@@ -617,6 +617,141 @@ TEST(background_effects) {
     cleanup_terminal(&term);
 }
 
+// Test edge cases and segfault regression
+TEST(gradient_edge_cases) {
+    // Test division by zero cases
+    float pos1 = calculate_gradient_position(0, 0, 1, 1, GRADIENT_HORIZONTAL, 0.0f);
+    assert(pos1 == 0.0f); // Should not crash with width=1
+    
+    float pos2 = calculate_gradient_position(0, 0, 1, 1, GRADIENT_VERTICAL, 0.0f);
+    assert(pos2 == 0.0f); // Should not crash with height=1
+    
+    float pos3 = calculate_gradient_position(0, 0, 1, 1, GRADIENT_DIAGONAL, 0.0f);
+    assert(pos3 == 0.0f); // Should not crash with both=1
+    
+    float pos4 = calculate_gradient_position(0, 0, 1, 1, GRADIENT_RADIAL, 0.0f);
+    assert(pos4 == 0.0f); // Should not crash with radial center at origin
+    
+    float pos5 = calculate_gradient_position(0, 0, 1, 1, GRADIENT_ANGLE, 45.0f);
+    assert(pos5 == 0.0f); // Should not crash with angle gradient
+    
+    // Test invalid dimensions
+    float pos6 = calculate_gradient_position(0, 0, 0, 0, GRADIENT_HORIZONTAL, 0.0f);
+    assert(pos6 == 0.0f); // Should handle zero dimensions safely
+    
+    float pos7 = calculate_gradient_position(0, 0, -1, -1, GRADIENT_HORIZONTAL, 0.0f);
+    assert(pos7 == 0.0f); // Should handle negative dimensions safely
+}
+
+// Test interpolate_gradient with edge cases
+TEST(interpolate_gradient_edge_cases) {
+    rgb_color_t stops[2] = {{255, 0, 0}, {0, 255, 0}}; // Red to green
+    
+    // Test NULL pointer safety
+    rgb_color_t result1 = interpolate_gradient(NULL, 2, 0.5f);
+    assert(result1.r == 255 && result1.g == 255 && result1.b == 255); // Should return white
+    
+    // Test zero count
+    rgb_color_t result2 = interpolate_gradient(stops, 0, 0.5f);
+    assert(result2.r == 255 && result2.g == 255 && result2.b == 255); // Should return white
+    
+    // Test NaN position
+    rgb_color_t result3 = interpolate_gradient(stops, 2, 0.0f/0.0f); // NaN
+    assert(result3.r == 255 && result3.g == 0 && result3.b == 0); // Should return first color
+    
+    // Test infinity position
+    rgb_color_t result4 = interpolate_gradient(stops, 2, 1.0f/0.0f); // Infinity
+    assert(result4.r == 0 && result4.g == 255 && result4.b == 0); // Should return last color (infinity > 1)
+    
+    // Test negative position
+    rgb_color_t result5 = interpolate_gradient(stops, 2, -1.0f);
+    assert(result5.r == 255 && result5.g == 0 && result5.b == 0); // Should return first color
+    
+    // Test position > 1
+    rgb_color_t result6 = interpolate_gradient(stops, 2, 2.0f);
+    assert(result6.r == 0 && result6.g == 255 && result6.b == 0); // Should return last color
+}
+
+// Test command line segfault regression
+TEST(command_line_segfault_regression) {
+    config_t config = {0};
+    config.gradient_preset = GRADIENT_PRESET_CUSTOM;
+    config.background_effect = BACKGROUND_NONE;
+    config.background_intensity = 50;
+    config.gradient_colors_string = NULL;
+    config.auto_gradient = 0;
+    config.use_gradient = 1;
+    
+    terminal_t term = {0};
+    init_terminal(&term);
+    
+    // Test the specific combination that caused segfault
+    setup_gradient_preset(&config, GRADIENT_PRESET_NEON);
+    assert(config.gradient_count == 4);
+    assert(config.gradient_direction == GRADIENT_ANGLE);
+    assert(config.gradient_angle == 45.0f);
+    
+    // Set up minimal text data
+    term.text_width = 4;
+    term.text_height = 1;
+    term.char_count = 4;
+    for (int i = 0; i < 4; i++) {
+        term.chars[i].target.row = 0;
+        term.chars[i].target.col = i;
+        term.chars[i].ch = 'A' + i;
+        term.chars[i].original_ch = 'A' + i;
+        term.chars[i].visible = 1;
+        term.chars[i].active = 1;
+    }
+    
+    // This should not crash
+    apply_initial_gradient(&term, &config);
+    
+    // Verify gradient was applied without crash
+    for (int i = 0; i < 4; i++) {
+        assert(term.chars[i].color_fg >= 0);
+        assert(term.chars[i].color_fg <= 255);
+    }
+    
+    cleanup_terminal(&term);
+}
+
+// Test background rendering safety
+TEST(background_rendering_safety) {
+    config_t config = {0};
+    terminal_t term = {0};
+    init_terminal(&term);
+    
+    // Set up minimal terminal
+    term.canvas_width = 1;
+    term.canvas_height = 1;
+    term.canvas_offset_x = 0;
+    term.canvas_offset_y = 0;
+    
+    // Test all background effects with minimal dimensions (should not crash)
+    config.background_intensity = 50;
+    
+    config.background_effect = BACKGROUND_STARS;
+    render_background(&term, &config, 0);
+    
+    config.background_effect = BACKGROUND_MATRIX_RAIN;
+    render_background(&term, &config, 0);
+    
+    config.background_effect = BACKGROUND_PARTICLES;
+    render_background(&term, &config, 0);
+    
+    config.background_effect = BACKGROUND_GRID;
+    render_background(&term, &config, 0);
+    
+    config.background_effect = BACKGROUND_WAVES;
+    render_background(&term, &config, 0);
+    
+    config.background_effect = BACKGROUND_PLASMA;
+    render_background(&term, &config, 0);
+    
+    cleanup_terminal(&term);
+}
+
 int main() {
     printf("tte-c Unit Tests\n");
     printf("================\n");
@@ -644,6 +779,10 @@ int main() {
     RUN_TEST(gradient_color_parsing);
     RUN_TEST(auto_gradient_generation);
     RUN_TEST(background_effects);
+    RUN_TEST(gradient_edge_cases);
+    RUN_TEST(interpolate_gradient_edge_cases);
+    RUN_TEST(command_line_segfault_regression);
+    RUN_TEST(background_rendering_safety);
     RUN_TEST(performance_comparison);
     
     printf("\nAll tests passed! ✅\n");
