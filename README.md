@@ -19,13 +19,13 @@ A fast, lightweight C reimplementation of terminal text effects, providing the e
 ## Features
 
 ### Visual Effects (15 implemented)
-- ✅ `beams` - Light beams sweep across text → **8-stop blue-cyan-white gradient**
+- ✅ `beams` - **Multiple directional light beams** sweep across canvas → **8-stop blue-cyan-white gradient**
 - ✅ `waves` - Wave motion with dynamic brightness → **8-stop blue-cyan-white gradient**
 - ✅ `rain` - Characters fall like rain with brightness effects → **8-stop blue-cyan-white gradient**  
 - ✅ `slide` - Text slides into position from off-screen → **8-stop blue-cyan-white gradient**
 - ✅ `expand` - Text expands from center point outward → **8-stop blue-cyan-white gradient**
-- ✅ `matrix` - Matrix digital rain → **5-stop radial green gradient**
-- ✅ `fireworks` - Characters launch and explode → **6-stop radial fire gradient**
+- ✅ `matrix` - **Proper digital rain columns** with character cycling → **5-stop radial green gradient**
+- ✅ `fireworks` - **Multi-shell launches and explosions** with realistic trajectories → **6-stop radial fire gradient**
 - ✅ `decrypt` - Movie-style decryption → **4-stop diagonal green gradient**
 - ✅ `typewriter` - Sequential character typing → **Random direction gradient**
 - ✅ `wipe` - Left-to-right reveal wipe → **Random direction gradient**
