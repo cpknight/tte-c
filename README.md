@@ -4,7 +4,7 @@ A fast, lightweight C reimplementation of terminal text effects, providing the e
 
 [![C/C++ CI](https://github.com/cpknight/tte-c/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/cpknight/tte-c/actions/workflows/c-cpp.yml)
 
-:information_source: _This is part of an "AI slop" porting experiment - testing methods leading to automated LLM-based software porting. Please reach out to [cpknight](mailto:chris@cpknight.io) for more information._
+:information_source: _This is part of an "AI slop" porting experiment - testing methods leading to automated LLM-based software porting. Please reach out to [cpknight](https://github.com/cpknight) for more information._
 
 ## Overview
 
