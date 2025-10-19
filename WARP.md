@@ -39,6 +39,16 @@ gcc -g -DDEBUG -I. tests/test_tte.c src/*.o -o tests/test_effect -lm
 ./tests/test_effect
 ```
 
+### Git Workflow
+```bash
+# Always use separate add and commit commands to avoid shell escaping issues
+git add -A
+git commit -m "Brief descriptive message"
+
+# NEVER use multi-line commit messages in single command
+# NEVER use complex commit messages with quotes/newlines in git commit -m
+```
+
 ## Code Architecture
 
 ### Core Components
