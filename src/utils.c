@@ -1,5 +1,29 @@
 #include "tte.h"
 
+anchor_t parse_anchor(const char *anchor_str) {
+    if (strcmp(anchor_str, "sw") == 0 || strcmp(anchor_str, "southwest") == 0) {
+        return ANCHOR_SW;
+    } else if (strcmp(anchor_str, "s") == 0 || strcmp(anchor_str, "south") == 0) {
+        return ANCHOR_S;
+    } else if (strcmp(anchor_str, "se") == 0 || strcmp(anchor_str, "southeast") == 0) {
+        return ANCHOR_SE;
+    } else if (strcmp(anchor_str, "e") == 0 || strcmp(anchor_str, "east") == 0) {
+        return ANCHOR_E;
+    } else if (strcmp(anchor_str, "ne") == 0 || strcmp(anchor_str, "northeast") == 0) {
+        return ANCHOR_NE;
+    } else if (strcmp(anchor_str, "n") == 0 || strcmp(anchor_str, "north") == 0) {
+        return ANCHOR_N;
+    } else if (strcmp(anchor_str, "nw") == 0 || strcmp(anchor_str, "northwest") == 0) {
+        return ANCHOR_NW;
+    } else if (strcmp(anchor_str, "w") == 0 || strcmp(anchor_str, "west") == 0) {
+        return ANCHOR_W;
+    } else if (strcmp(anchor_str, "c") == 0 || strcmp(anchor_str, "center") == 0) {
+        return ANCHOR_C;
+    }
+    // Default to center if unknown
+    return ANCHOR_C;
+}
+
 void print_usage(const char *program_name) {
     printf("Usage: %s [options] <effect>\n", program_name);
     printf("\nOptions:\n");
@@ -7,6 +31,13 @@ void print_usage(const char *program_name) {
     printf("  --canvas-width <width>    Set canvas width (0 = auto)\n");
     printf("  --canvas-height <height>  Set canvas height (0 = auto)\n");
     printf("  --no-final-newline        Suppress final newline (prevents scrolling)\n");
+    printf("  --anchor-canvas <anchor>  Set canvas anchor point (sw/s/se/e/ne/n/nw/w/c)\n");
+    printf("  --anchor-text <anchor>    Set text anchor point (sw/s/se/e/ne/n/nw/w/c)\n");
+    printf("  --ignore-terminal-dimensions  Use canvas dimensions instead of terminal\n");
+    printf("  --wrap-text               Enable text wrapping\n");
+    printf("  --tab-width <width>       Set tab width (default: 4)\n");
+    printf("  --xterm-colors            Force 8-bit color mode\n");
+    printf("  --no-color                Disable all colors\n");
     printf("  -h, --help               Show this help message\n");
     printf("\nEffects:\n");
     printf("  beams     Light beams sweep across the text\n");
@@ -22,8 +53,12 @@ void print_usage(const char *program_name) {
     printf("  spotlights Moving spotlight illumination\n");
     printf("  burn      Vertical burning reveal with flicker\n");
     printf("  swarm     Characters swarm into position\n");
+    printf("\nAnchor Points:\n");
+    printf("  nw  n  ne     northwest  north  northeast\n");
+    printf("  w   c   e  =  west      center east\n");
+    printf("  sw  s  se     southwest south  southeast\n");
     printf("\nExample:\n");
-    printf("  %s --no-final-newline beams < input.txt\n", program_name);
+    printf("  %s --no-final-newline --anchor-text c beams < input.txt\n", program_name);
 }
 
 void parse_args(int argc, char *argv[], config_t *config) {
@@ -45,6 +80,29 @@ void parse_args(int argc, char *argv[], config_t *config) {
             }
         } else if (strcmp(argv[i], "--no-final-newline") == 0) {
             config->no_final_newline = 1;
+        } else if (strcmp(argv[i], "--anchor-canvas") == 0) {
+            if (i + 1 < argc) {
+                config->anchor_canvas = parse_anchor(argv[++i]);
+            }
+        } else if (strcmp(argv[i], "--anchor-text") == 0) {
+            if (i + 1 < argc) {
+                config->anchor_text = parse_anchor(argv[++i]);
+            }
+        } else if (strcmp(argv[i], "--ignore-terminal-dimensions") == 0) {
+            config->ignore_terminal_dimensions = 1;
+        } else if (strcmp(argv[i], "--wrap-text") == 0) {
+            config->wrap_text = 1;
+        } else if (strcmp(argv[i], "--tab-width") == 0) {
+            if (i + 1 < argc) {
+                config->tab_width = atoi(argv[++i]);
+                if (config->tab_width < 1) {
+                    config->tab_width = 4;  // Default tab width
+                }
+            }
+        } else if (strcmp(argv[i], "--xterm-colors") == 0) {
+            config->xterm_colors = 1;
+        } else if (strcmp(argv[i], "--no-color") == 0) {
+            config->no_color = 1;
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             print_usage(argv[0]);
             exit(0);

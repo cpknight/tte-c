@@ -12,7 +12,12 @@ int main(int argc, char *argv[]) {
         .use_gradient = 1,
         .gradient_direction = GRADIENT_HORIZONTAL,
         .gradient_angle = 0.0f,
-        .gradient_steps = 64
+        .gradient_steps = 64,
+        .ignore_terminal_dimensions = 0,
+        .wrap_text = 0,
+        .tab_width = 4,
+        .xterm_colors = 0,
+        .no_color = 0
     };
     
     terminal_t term = {0};
@@ -37,7 +42,7 @@ int main(int argc, char *argv[]) {
     
     // Initialize terminal and read input
     init_terminal(&term);
-    read_input_text(&term);
+    read_input_text_with_config(&term, &config);
     
     // Set canvas dimensions (0 means use full terminal)
     if (config.canvas_width > 0) {
@@ -81,7 +86,7 @@ int main(int argc, char *argv[]) {
             apply_final_gradient(&term, &config);
         }
         
-        render_frame(&term);
+        render_frame_with_config(&term, &config);
         
         if (active_chars == 0 && frame > 60) {
             break;

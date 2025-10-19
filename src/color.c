@@ -3,7 +3,23 @@
 // 256-color lookup table for RGB conversion
 static const int color_cube[6] = {0, 95, 135, 175, 215, 255};
 
-void format_color_256(char *buffer, int fg, int bg, int bold) {
+void format_color_256_with_config(char *buffer, int fg, int bg, int bold, config_t *config) {
+    // Handle no-color option
+    if (config && config->no_color) {
+        if (bold) {
+            sprintf(buffer, "\033[1m");
+        } else {
+            buffer[0] = '\0';  // No color codes
+        }
+        return;
+    }
+    
+    // Handle xterm-colors option (limit to basic 16 colors)
+    if (config && config->xterm_colors) {
+        if (fg >= 0) fg = fg % 16;
+        if (bg >= 0) bg = bg % 16;
+    }
+    
     if (fg >= 0 && bg >= 0) {
         if (bold) {
             sprintf(buffer, "\033[1;38;5;%d;48;5;%dm", fg, bg);
@@ -25,6 +41,11 @@ void format_color_256(char *buffer, int fg, int bg, int bold) {
             sprintf(buffer, "\033[0m");
         }
     }
+}
+
+// Legacy function for backwards compatibility
+void format_color_256(char *buffer, int fg, int bg, int bold) {
+    format_color_256_with_config(buffer, fg, bg, bold, NULL);
 }
 
 int rgb_to_256(int r, int g, int b) {

@@ -30,7 +30,7 @@ void cleanup_terminal(terminal_t *term) {
     }
 }
 
-void read_input_text(terminal_t *term) {
+void read_input_text_with_config(terminal_t *term, config_t *config) {
     char buffer[4096];
     int row = 0;
     int col = 0;
@@ -47,7 +47,17 @@ void read_input_text(terminal_t *term) {
         
         col = 0;
         for (int i = 0; i < len && term->char_count < MAX_CHARS; i++) {
-            if (buffer[i] != ' ' && buffer[i] != '\t') {
+            if (buffer[i] == '\t') {
+                // Handle tabs with configurable tab width
+                int spaces = config->tab_width - (col % config->tab_width);
+                col += spaces;
+            } else if (buffer[i] != ' ') {
+                // Handle text wrapping if enabled
+                if (config->wrap_text && col >= term->terminal_width) {
+                    row++;
+                    col = 0;
+                }
+                
                 character_t *ch = &term->chars[term->char_count++];
                 ch->ch = buffer[i];
                 ch->original_ch = buffer[i];  // Store original for decrypt effect
@@ -61,8 +71,10 @@ void read_input_text(terminal_t *term) {
                 ch->color_fg = 15;  // Default white
                 ch->color_bg = -1;  // No background
                 ch->bold = 0;
+                col++;
+            } else {
+                col++;
             }
-            col++;
         }
         
         if (col > max_col) {
@@ -75,16 +87,37 @@ void read_input_text(terminal_t *term) {
     term->text_width = max_col;
     term->text_height = row;
     
-    // Adjust canvas size if needed (default to text size if not specified)
-    if (term->canvas_width == 0) {
-        term->canvas_width = max_col;
-    }
-    if (term->canvas_height == 0) {
-        term->canvas_height = row;
+    // Handle ignore terminal dimensions option
+    if (config->ignore_terminal_dimensions) {
+        // Use canvas dimensions instead of terminal dimensions
+        if (term->canvas_width == 0) {
+            term->canvas_width = max_col;
+        }
+        if (term->canvas_height == 0) {
+            term->canvas_height = row;
+        }
+    } else {
+        // Adjust canvas size if needed (default to text size if not specified)
+        if (term->canvas_width == 0) {
+            term->canvas_width = max_col;
+        }
+        if (term->canvas_height == 0) {
+            term->canvas_height = row;
+        }
     }
 }
 
-void render_frame(terminal_t *term) {
+// Legacy function for backwards compatibility
+void read_input_text(terminal_t *term) {
+    config_t default_config = {
+        .tab_width = 4,
+        .wrap_text = 0,
+        .ignore_terminal_dimensions = 0
+    };
+    read_input_text_with_config(term, &default_config);
+}
+
+void render_frame_with_config(terminal_t *term, config_t *config) {
     // Create screen buffer with color info
     static char screen[MAX_LINES][MAX_COLS];
     static int screen_fg[MAX_LINES][MAX_COLS];
@@ -150,7 +183,7 @@ void render_frame(terminal_t *term) {
                 screen_bold[i][j] != current_bold) {
                 // Only output color codes if we have valid color data for non-space chars
                 if (screen[i][j] != ' ' && screen_fg[i][j] >= 0) {
-                    format_color_256(color_buffer, screen_fg[i][j], screen_bg[i][j], screen_bold[i][j]);
+                    format_color_256_with_config(color_buffer, screen_fg[i][j], screen_bg[i][j], screen_bold[i][j], config);
                     printf("%s", color_buffer);
                 }
                 current_fg = screen_fg[i][j];
@@ -163,8 +196,15 @@ void render_frame(terminal_t *term) {
             putchar('\n');
         }
     }
-    printf(ANSI_RESET);  // Reset colors at end
+    if (!config || !config->no_color) {
+        printf(ANSI_RESET);  // Reset colors at end unless no-color is enabled
+    }
     fflush(stdout);
+}
+
+// Legacy function for backwards compatibility
+void render_frame(terminal_t *term) {
+    render_frame_with_config(term, NULL);
 }
 
 void sleep_frame(int frame_rate) {

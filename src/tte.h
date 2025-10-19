@@ -88,6 +88,13 @@ typedef struct {
     gradient_direction_t gradient_direction;
     float gradient_angle;  // For angled gradients (degrees)
     int gradient_steps;   // Number of color steps to generate
+    
+    // New command line options
+    int ignore_terminal_dimensions;
+    int wrap_text;
+    int tab_width;
+    int xterm_colors;  // Force 8-bit color mode
+    int no_color;      // Disable all colors
 } config_t;
 
 typedef struct {
@@ -114,7 +121,9 @@ void init_terminal(terminal_t *term);
 void cleanup_terminal(terminal_t *term);
 void get_terminal_size(int *width, int *height);
 void read_input_text(terminal_t *term);
+void read_input_text_with_config(terminal_t *term, config_t *config);
 void render_frame(terminal_t *term);
+void render_frame_with_config(terminal_t *term, config_t *config);
 void sleep_frame(int frame_rate);
 
 // Effect functions
@@ -136,9 +145,11 @@ void effect_swarm(terminal_t *term, int frame);
 void parse_args(int argc, char *argv[], config_t *config);
 effect_func_t get_effect_function(const char *effect_name);
 void print_usage(const char *program_name);
+anchor_t parse_anchor(const char *anchor_str);
 
 // Color functions
 void format_color_256(char *buffer, int fg, int bg, int bold);
+void format_color_256_with_config(char *buffer, int fg, int bg, int bold, config_t *config);
 rgb_color_t interpolate_rgb(rgb_color_t color1, rgb_color_t color2, float progress);
 rgb_color_t interpolate_gradient(rgb_color_t *stops, int count, float position);
 int rgb_to_256(int r, int g, int b);

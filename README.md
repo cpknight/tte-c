@@ -44,7 +44,31 @@ tte-c delivers the visual impact of terminal text effects with:
 make          # Standard build
 make debug    # Build with debugging symbols
 make clean    # Clean object files
+make test     # Build and run unit tests
 ```
+
+## Testing
+
+```bash
+# Run comprehensive unit tests
+make test
+
+# Manual testing of individual effects
+echo "Hello World" | ./tte-c beams
+echo "Matrix Effect" | ./tte-c --anchor-text c matrix
+echo "No Colors" | ./tte-c --no-color --anchor-text nw typewriter
+```
+
+### Test Coverage
+- RGB color conversion accuracy
+- Gradient interpolation correctness  
+- Terminal initialization/cleanup
+- Effect function loading
+- Memory usage validation
+- Command line argument parsing
+- Anchor point parsing
+- Color formatting options (no-color, xterm-colors)
+- Performance comparison vs original TTE
 
 ## Usage
 
@@ -57,6 +81,13 @@ make clean    # Clean object files
 - `--frame-rate <fps>` - Animation frame rate (default: 240 FPS)
 - `--canvas-width <width>` - Canvas width (0 = terminal width, -1 = text width)
 - `--canvas-height <height>` - Canvas height (0 = terminal height, -1 = text height)
+- `--anchor-canvas <anchor>` - Set canvas anchor point (sw/s/se/e/ne/n/nw/w/c)
+- `--anchor-text <anchor>` - Set text anchor point (sw/s/se/e/ne/n/nw/w/c)
+- `--ignore-terminal-dimensions` - Use canvas dimensions instead of terminal
+- `--wrap-text` - Enable text wrapping
+- `--tab-width <width>` - Set tab width (default: 4)
+- `--xterm-colors` - Force 8-bit color mode
+- `--no-color` - Disable all colors
 - `-h, --help` - Show help message
 
 ### Examples
@@ -73,6 +104,15 @@ cat logo.txt | ./tte-c --frame-rate 120 --canvas-width 0 --canvas-height 0 firew
 
 # Slower, more dramatic effect
 echo "CLASSIFIED" | ./tte-c --frame-rate 30 decrypt
+
+# New anchor and positioning options
+echo "Centered Text" | ./tte-c --anchor-text c --anchor-canvas c beams
+echo "Top Left" | ./tte-c --anchor-text nw --anchor-canvas nw waves
+
+# Color and terminal options
+echo "No Colors" | ./tte-c --no-color typewriter
+echo "8-bit Colors" | ./tte-c --xterm-colors matrix
+echo "Custom Tab Width" | ./tte-c --tab-width 8 --wrap-text slide
 ```
 
 ## Remaining Features to Port
@@ -104,12 +144,12 @@ echo "CLASSIFIED" | ./tte-c --frame-rate 30 decrypt
 - ❌ **Background effects** (canvas-wide animations)
 
 ### Command Line Options (Original tte)
-- ❌ `--anchor-canvas` / `--anchor-text` (implemented internally, not exposed)
-- ❌ `--ignore-terminal-dimensions`
-- ❌ `--wrap-text`
-- ❌ `--tab-width`
-- ❌ `--xterm-colors` (force 8-bit color mode)
-- ❌ `--no-color`
+- ✅ `--anchor-canvas` / `--anchor-text` **IMPLEMENTED**
+- ✅ `--ignore-terminal-dimensions` **IMPLEMENTED**
+- ✅ `--wrap-text` **IMPLEMENTED**
+- ✅ `--tab-width` **IMPLEMENTED**
+- ✅ `--xterm-colors` (force 8-bit color mode) **IMPLEMENTED**
+- ✅ `--no-color` **IMPLEMENTED**
 - ❌ Effect-specific options (colors, speeds, directions)
 
 ## Performance Comparison

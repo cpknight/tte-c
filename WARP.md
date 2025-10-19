@@ -121,6 +121,27 @@ void effect_name(terminal_t *term, int frame) {
 - Avoid hardcoded colors except special effects (matrix, fireworks, decrypt)
 - Always set `active = 0` when character animation completes
 
+## Command Line Options
+
+### Core Options
+- `--frame-rate <fps>` - Animation speed (default: 240)
+- `--canvas-width/height <size>` - Canvas dimensions (0 = auto)
+- `--no-final-newline` - Prevent scrolling (screensaver mode)
+
+### Positioning & Anchoring (NEW)
+- `--anchor-canvas <point>` - Canvas position in terminal
+- `--anchor-text <point>` - Text position within canvas
+- Anchor points: `nw/n/ne/w/c/e/sw/s/se` (9-point system)
+
+### Text Processing (NEW) 
+- `--wrap-text` - Enable text wrapping
+- `--tab-width <width>` - Configurable tab expansion (default: 4)
+- `--ignore-terminal-dimensions` - Use canvas size instead of terminal
+
+### Color & Display (NEW)
+- `--no-color` - Disable all colors (monochrome mode)
+- `--xterm-colors` - Force 8-bit color mode (16 colors max)
+
 ## Current Effects (13 Implemented)
 
 ### Standard Effects (Random gradients applied)
@@ -142,13 +163,20 @@ void effect_name(terminal_t *term, int frame) {
 
 ## Testing Framework
 
-**Location**: `tests/test_tte.c`
+**Location**: `tests/test_tte.c`  
+**Command**: `make test`
+
 **Test Coverage**:
 - RGB color conversion accuracy
 - Gradient interpolation correctness
 - Terminal initialization/cleanup
 - Effect function loading
 - Memory usage validation
+- Command line argument parsing (all new options)
+- Anchor point parsing (9-point positioning system)
+- Color formatting options (no-color, xterm-colors)
+- Text reading with configuration
+- Performance comparison vs original TTE
 
 ## Code Style Guidelines
 
