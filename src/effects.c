@@ -1,35 +1,81 @@
 #include "tte.h"
 
 void effect_beams(terminal_t *term, int frame) {
-    int beam_width = 3;
-    int beam_speed = 2;
+    // Multiple beams sweep across canvas (rows and columns)
+    int beam_width = 2;
+    int beam_delay = 15; // Frames between beam groups
     
     for (int i = 0; i < term->char_count; i++) {
         character_t *ch = &term->chars[i];
+        ch->visible = 0; // Start hidden
+        ch->bold = 0;
         
-        // Calculate beam position sweeping from left to right
-        int beam_pos = (frame * beam_speed) - term->text_width;
+        int illuminated = 0;
         
-        // Character becomes visible when beam passes over it
-        if (beam_pos >= ch->target.col - beam_width && 
-            beam_pos <= ch->target.col + beam_width) {
-            ch->visible = 1;
-            ch->pos = ch->target;
-            // Brighten the gradient color for beam effect
-            ch->bold = 1;  // Make gradient color bright
+        // Row beams (horizontal sweeps)
+        for (int beam_group = 0; beam_group < 3; beam_group++) {
+            int beam_start = beam_group * beam_delay;
+            if (frame >= beam_start) {
+                int beam_pos = (frame - beam_start) * 2 - term->text_width;
+                if (beam_pos >= ch->target.col - beam_width && 
+                    beam_pos <= ch->target.col + beam_width) {
+                    // Character is in beam path for this row
+                    int row_match = (ch->target.row == beam_group * (term->text_height / 3));
+                    if (row_match || abs(ch->target.row - beam_group * (term->text_height / 3)) <= 1) {
+                        illuminated = 1;
+                        ch->bold = 1;
+                    }
+                }
+                // After beam passes, character remains visible
+                if (beam_pos > ch->target.col + beam_width) {
+                    int row_match = (ch->target.row == beam_group * (term->text_height / 3));
+                    if (row_match || abs(ch->target.row - beam_group * (term->text_height / 3)) <= 1) {
+                        ch->visible = 1;
+                    }
+                }
+            }
         }
         
-        // Keep character visible after beam passes
-        if (beam_pos > ch->target.col + beam_width) {
+        // Column beams (vertical sweeps) - start after horizontal
+        for (int beam_group = 0; beam_group < 2; beam_group++) {
+            int beam_start = 60 + beam_group * beam_delay; // Start after row beams
+            if (frame >= beam_start) {
+                int beam_pos = (frame - beam_start) * 1 - term->text_height;
+                if (beam_pos >= ch->target.row - beam_width && 
+                    beam_pos <= ch->target.row + beam_width) {
+                    // Character is in beam path for this column
+                    int col_match = (ch->target.col == beam_group * (term->text_width / 2) + term->text_width / 4);
+                    if (col_match || abs(ch->target.col - (beam_group * (term->text_width / 2) + term->text_width / 4)) <= 2) {
+                        illuminated = 1;
+                        ch->bold = 1;
+                    }
+                }
+                // After beam passes, character remains visible
+                if (beam_pos > ch->target.row + beam_width) {
+                    int col_match = (ch->target.col == beam_group * (term->text_width / 2) + term->text_width / 4);
+                    if (col_match || abs(ch->target.col - (beam_group * (term->text_width / 2) + term->text_width / 4)) <= 2) {
+                        ch->visible = 1;
+                    }
+                }
+            }
+        }
+        
+        if (illuminated) {
             ch->visible = 1;
-            ch->active = 0; // Mark as complete
-            // Return to normal gradient color (already set)
+            ch->pos = ch->target;
+        }
+        
+        // Final cleanup - ensure all characters are visible and effect completes
+        if (frame > 150) {
+            ch->visible = 1;
+            ch->pos = ch->target;
             ch->bold = 0;
+            ch->active = 0;
         }
     }
 }
 
-// New effects (lightweight approximations)
+// Simplified but effective versions of complex effects
 void effect_typewriter(terminal_t *term, int frame) {
     int speed = 2; // chars per frame
     for (int i = 0; i < term->char_count; i++) {
@@ -259,35 +305,70 @@ void effect_expand(terminal_t *term, int frame) {
 }
 
 void effect_matrix(terminal_t *term, int frame) {
-    // Matrix digital rain effect
+    // Matrix digital rain effect - columns of falling characters
+    char matrix_chars[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    int num_matrix_chars = sizeof(matrix_chars) - 1;
+    
     for (int i = 0; i < term->char_count; i++) {
         character_t *ch = &term->chars[i];
         
-        // Staggered appearance based on column
-        int start_frame = ch->target.col * 8 + (frame % 40);
+        // Each column starts at different times
+        int col_start_frame = ch->target.col * 12 + ((ch->target.col * 7) % 20);
         
-        if (frame >= start_frame) {
+        if (frame < col_start_frame) {
+            ch->visible = 0;
+            continue;
+        }
+        
+        // Calculate rain drop position - characters "fall" down the column
+        int rain_progress = (frame - col_start_frame) / 3; // Slower falling
+        int drop_row = rain_progress - term->text_height;
+        
+        // Create trailing effect - characters appear as the "rain" passes over them
+        int trail_length = 8;
+        int char_trail_pos = drop_row - ch->target.row;
+        
+        if (char_trail_pos >= -trail_length && char_trail_pos <= 2) {
             ch->visible = 1;
             ch->pos = ch->target;
             
-            // Matrix green color scheme
-            int time_visible = frame - start_frame;
-            if (time_visible < 20) {
-                // Bright green when first appearing
+            // Change character to matrix symbols during rain
+            if (char_trail_pos >= -2 && char_trail_pos <= 2) {
+                // Active rain area - cycle through matrix characters
+                if (frame % 4 == 0) {
+                    int char_seed = (ch->target.col * 31 + ch->target.row * 17 + frame / 4) % num_matrix_chars;
+                    ch->ch = matrix_chars[char_seed];
+                }
+            }
+            
+            // Color based on position in trail
+            if (char_trail_pos >= 0) {
+                // Leading edge - bright white/green
+                ch->color_fg = 15;  // White
+                ch->bold = 1;
+            } else if (char_trail_pos >= -2) {
+                // Near edge - bright green
                 ch->color_fg = 46;  // Bright green
                 ch->bold = 1;
-            } else if (time_visible < 60) {
-                // Medium green
+            } else if (char_trail_pos >= -4) {
+                // Medium trail - green
                 ch->color_fg = 40;  // Green
                 ch->bold = 0;
             } else {
-                // Dark green
+                // Fading trail - dark green
                 ch->color_fg = 22;  // Dark green
                 ch->bold = 0;
             }
             
-            if (time_visible > 100) {
-                ch->bold = 0;  // Keep matrix gradient color
+        } else if (drop_row > ch->target.row + 2) {
+            // Rain has passed - show original character with gradient color
+            ch->visible = 1;
+            ch->pos = ch->target;
+            ch->ch = ch->original_ch;  // Restore original character
+            ch->bold = 0;  // Use gradient color system
+            
+            // Mark as complete when all columns have finished raining
+            if (frame > col_start_frame + (term->text_height + trail_length) * 3 + 60) {
                 ch->active = 0;
             }
         }
@@ -295,50 +376,91 @@ void effect_matrix(terminal_t *term, int frame) {
 }
 
 void effect_fireworks(terminal_t *term, int frame) {
-    int center_row = term->text_height / 2;
-    int center_col = term->text_width / 2;
+    // Multiple firework shells launch from bottom and explode
+    int num_shells = 5;
+    int shell_delay = 20; // Frames between shell launches
     
     for (int i = 0; i < term->char_count; i++) {
         character_t *ch = &term->chars[i];
         
-        // Calculate distance from center for launch timing
-        int dx = ch->target.col - center_col;
-        int dy = ch->target.row - center_row;
-        int distance = (int)sqrt(dx * dx + dy * dy);
+        // Determine which firework shell this character belongs to
+        int shell_id = (ch->target.col + ch->target.row * 7) % num_shells;
+        int shell_launch_frame = shell_id * shell_delay;
         
-        int launch_frame = distance * 4;
-        int explode_frame = launch_frame + 30;
+        if (frame < shell_launch_frame) {
+            ch->visible = 0;
+            continue;
+        }
         
-        if (frame >= launch_frame && frame < explode_frame) {
-            // Launch phase - move from bottom to explosion point
-            ch->visible = 1;
-            float progress = (float)(frame - launch_frame) / 30.0f;
-            ch->pos.row = term->text_height + (int)((ch->target.row - term->text_height) * progress);
-            ch->pos.col = ch->target.col;
+        // Calculate shell explosion point (not necessarily character's final position)
+        int shell_explode_col = (shell_id * term->text_width / num_shells) + (term->text_width / (num_shells * 2));
+        int shell_explode_row = term->text_height / 3 + (shell_id % 3) * (term->text_height / 6);
+        
+        int launch_duration = 40;
+        int explode_frame = shell_launch_frame + launch_duration;
+        int explosion_duration = 50;
+        
+        if (frame >= shell_launch_frame && frame < explode_frame) {
+            // Launch phase - shell travels from bottom to explosion point
+            float launch_progress = (float)(frame - shell_launch_frame) / (float)launch_duration;
             
-            // Bright yellow/white trail
-            ch->color_fg = 226;  // Bright yellow
-            ch->bold = 1;
+            // Only show characters that are part of the shell (not all characters)
+            int is_shell_char = ((ch->target.col == shell_explode_col) || 
+                               (abs(ch->target.col - shell_explode_col) <= 1)) &&
+                              ((ch->target.row == shell_explode_row) ||
+                               (abs(ch->target.row - shell_explode_row) <= 1));
             
-        } else if (frame >= explode_frame) {
-            // Explosion phase - appear at final position
+            if (is_shell_char) {
+                ch->visible = 1;
+                ch->pos.col = shell_explode_col;
+                ch->pos.row = term->text_height - 1 - (int)((term->text_height - 1 - shell_explode_row) * launch_progress);
+                
+                // Bright shell color during launch
+                ch->color_fg = 226;  // Bright yellow
+                ch->bold = 1;
+            }
+            
+        } else if (frame >= explode_frame && frame < explode_frame + explosion_duration) {
+            // Explosion phase - characters explode outward from shell position
+            int explode_time = frame - explode_frame;
+            float explode_progress = (float)explode_time / (float)explosion_duration;
+            
+            // Calculate direction from explosion point to character's final position
+            int dx = ch->target.col - shell_explode_col;
+            int dy = ch->target.row - shell_explode_row;
+            float distance = sqrt(dx * dx + dy * dy);
+            
+            // Only explode characters within reasonable distance of shell
+            if (distance <= 8) {
+                ch->visible = 1;
+                
+                // Move from explosion point to final position
+                ch->pos.col = shell_explode_col + (int)(dx * explode_progress);
+                ch->pos.row = shell_explode_row + (int)(dy * explode_progress);
+                
+                // Color progression during explosion: white -> red -> orange -> yellow
+                if (explode_time < 8) {
+                    ch->color_fg = 15;   // White (initial flash)
+                    ch->bold = 1;
+                } else if (explode_time < 18) {
+                    ch->color_fg = 196;  // Bright red
+                    ch->bold = 1;
+                } else if (explode_time < 30) {
+                    ch->color_fg = 208;  // Orange
+                    ch->bold = 1;
+                } else {
+                    ch->color_fg = 226;  // Yellow (fading)
+                    ch->bold = 0;
+                }
+            }
+            
+        } else if (frame >= explode_frame + explosion_duration) {
+            // Settling phase - characters settle to final positions with gradient colors
             ch->visible = 1;
             ch->pos = ch->target;
+            ch->bold = 0;  // Use gradient color system
             
-            // Color explosion: red -> orange -> yellow -> white
-            int explode_time = frame - explode_frame;
-            if (explode_time < 10) {
-                ch->color_fg = 196;  // Bright red
-                ch->bold = 1;
-            } else if (explode_time < 20) {
-                ch->color_fg = 208;  // Orange
-                ch->bold = 1;
-            } else if (explode_time < 30) {
-                ch->color_fg = 226;  // Yellow
-                ch->bold = 0;
-            } else {
-                // Keep gradient color (was set at initialization)
-                ch->bold = 0;
+            if (frame > explode_frame + explosion_duration + 30) {
                 ch->active = 0;
             }
         }
