@@ -51,6 +51,50 @@ typedef enum {
     GRADIENT_ANGLE
 } gradient_direction_t;
 
+// Easing function types
+typedef enum {
+    EASE_LINEAR,
+    EASE_IN_QUAD, EASE_OUT_QUAD, EASE_IN_OUT_QUAD,
+    EASE_IN_CUBIC, EASE_OUT_CUBIC, EASE_IN_OUT_CUBIC,
+    EASE_IN_QUART, EASE_OUT_QUART, EASE_IN_OUT_QUART,
+    EASE_IN_QUINT, EASE_OUT_QUINT, EASE_IN_OUT_QUINT,
+    EASE_IN_SINE, EASE_OUT_SINE, EASE_IN_OUT_SINE,
+    EASE_IN_EXPO, EASE_OUT_EXPO, EASE_IN_OUT_EXPO,
+    EASE_IN_CIRC, EASE_OUT_CIRC, EASE_IN_OUT_CIRC,
+    EASE_IN_BACK, EASE_OUT_BACK, EASE_IN_OUT_BACK,
+    EASE_IN_ELASTIC, EASE_OUT_ELASTIC, EASE_IN_OUT_ELASTIC,
+    EASE_IN_BOUNCE, EASE_OUT_BOUNCE, EASE_IN_OUT_BOUNCE
+} easing_t;
+
+// Background effect types
+typedef enum {
+    BACKGROUND_NONE,
+    BACKGROUND_STARS,
+    BACKGROUND_MATRIX_RAIN,
+    BACKGROUND_PARTICLES,
+    BACKGROUND_GRID,
+    BACKGROUND_WAVES,
+    BACKGROUND_PLASMA
+} background_effect_t;
+
+// HSV color structure
+typedef struct {
+    float h, s, v; // Hue (0-360), Saturation (0-1), Value (0-1)
+} hsv_color_t;
+
+// Gradient preset types
+typedef enum {
+    GRADIENT_PRESET_CUSTOM,
+    GRADIENT_PRESET_RAINBOW,
+    GRADIENT_PRESET_FIRE,
+    GRADIENT_PRESET_OCEAN,
+    GRADIENT_PRESET_SUNSET,
+    GRADIENT_PRESET_FOREST,
+    GRADIENT_PRESET_ICE,
+    GRADIENT_PRESET_NEON,
+    GRADIENT_PRESET_PASTEL
+} gradient_preset_t;
+
 // RGB color structure for interpolation
 typedef struct {
     int r, g, b;
@@ -88,6 +132,15 @@ typedef struct {
     gradient_direction_t gradient_direction;
     float gradient_angle;  // For angled gradients (degrees)
     int gradient_steps;   // Number of color steps to generate
+    gradient_preset_t gradient_preset;
+    
+    // Background effects
+    background_effect_t background_effect;
+    int background_intensity;  // 0-100
+    
+    // Advanced gradient options
+    char *gradient_colors_string;  // Custom gradient colors from command line
+    int auto_gradient;             // Generate gradient automatically
     
     // New command line options
     int ignore_terminal_dimensions;
@@ -169,5 +222,44 @@ void apply_final_gradient(terminal_t *term, config_t *config);
 
 // Anchoring functions
 void calculate_offsets(terminal_t *term, anchor_t canvas_anchor, anchor_t text_anchor);
+
+// Easing functions
+float apply_easing(float t, easing_t easing);
+float ease_in_quad(float t);
+float ease_out_quad(float t);
+float ease_in_out_quad(float t);
+float ease_in_cubic(float t);
+float ease_out_cubic(float t);
+float ease_in_out_cubic(float t);
+float ease_in_sine(float t);
+float ease_out_sine(float t);
+float ease_in_out_sine(float t);
+float ease_out_bounce(float t);
+float ease_out_elastic(float t);
+float ease_out_back(float t);
+
+// HSV color functions
+hsv_color_t rgb_to_hsv(rgb_color_t rgb);
+rgb_color_t hsv_to_rgb(hsv_color_t hsv);
+rgb_color_t color_wheel(float position);
+
+// Advanced gradient functions
+void setup_gradient_preset(config_t *config, gradient_preset_t preset);
+void parse_gradient_colors(config_t *config, const char *colors_string);
+void generate_auto_gradient(config_t *config, int seed);
+
+// Background effects
+void render_background(terminal_t *term, config_t *config, int frame);
+void render_stars_background(terminal_t *term, config_t *config, int frame);
+void render_matrix_background(terminal_t *term, config_t *config, int frame);
+void render_particles_background(terminal_t *term, config_t *config, int frame);
+void render_grid_background(terminal_t *term, config_t *config, int frame);
+void render_waves_background(terminal_t *term, config_t *config, int frame);
+void render_plasma_background(terminal_t *term, config_t *config, int frame);
+void render_background_to_screen(char screen[MAX_LINES][MAX_COLS], 
+                                int screen_fg[MAX_LINES][MAX_COLS],
+                                int screen_bg[MAX_LINES][MAX_COLS],
+                                int screen_bold[MAX_LINES][MAX_COLS],
+                                terminal_t *term, config_t *config, int frame);
 
 #endif // TTE_H

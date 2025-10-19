@@ -152,6 +152,12 @@ void render_frame_with_config(terminal_t *term, config_t *config) {
         }
     }
     
+    // Render background effects if enabled
+    if (config && config->background_effect != BACKGROUND_NONE) {
+        render_background_to_screen(screen, screen_fg, screen_bg, screen_bold, 
+                                  term, config, term->frame_count);
+    }
+    
     // Place visible characters with positioning and color
     for (int i = 0; i < term->char_count; i++) {
         character_t *ch = &term->chars[i];

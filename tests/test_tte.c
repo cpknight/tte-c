@@ -484,6 +484,139 @@ TEST(synthgrid_effect) {
     cleanup_terminal(&term);
 }
 
+// Test easing functions
+TEST(easing_functions) {
+    // Test linear easing
+    assert(apply_easing(0.0f, EASE_LINEAR) == 0.0f);
+    assert(apply_easing(1.0f, EASE_LINEAR) == 1.0f);
+    assert(apply_easing(0.5f, EASE_LINEAR) == 0.5f);
+    
+    // Test quadratic easing
+    float quad_result = apply_easing(0.5f, EASE_IN_QUAD);
+    assert(quad_result > 0.2f && quad_result < 0.3f); // Should be 0.25
+    
+    // Test bounds
+    assert(apply_easing(-1.0f, EASE_LINEAR) == 0.0f);
+    assert(apply_easing(2.0f, EASE_LINEAR) == 1.0f);
+}
+
+// Test HSV color conversion
+TEST(hsv_color_conversion) {
+    // Test RGB to HSV conversion
+    rgb_color_t red = {255, 0, 0};
+    hsv_color_t hsv_red = rgb_to_hsv(red);
+    assert(hsv_red.h >= -1.0f && hsv_red.h <= 361.0f); // Hue should be valid
+    assert(hsv_red.s >= 0.9f && hsv_red.s <= 1.1f);   // Should be saturated
+    assert(hsv_red.v >= 0.9f && hsv_red.v <= 1.1f);   // Should be bright
+    
+    // Test HSV to RGB conversion
+    hsv_color_t hsv_test = {0.0f, 1.0f, 1.0f}; // Pure red in HSV
+    rgb_color_t rgb_result = hsv_to_rgb(hsv_test);
+    assert(rgb_result.r >= 250); // Should be close to 255
+    assert(rgb_result.g <= 5);   // Should be close to 0
+    assert(rgb_result.b <= 5);   // Should be close to 0
+}
+
+// Test color wheel function
+TEST(color_wheel) {
+    rgb_color_t color1 = color_wheel(0.0f);   // Red
+    rgb_color_t color2 = color_wheel(0.33f);  // Green-ish
+    rgb_color_t color3 = color_wheel(0.66f);  // Blue-ish
+    
+    // Colors should be different
+    assert(!(color1.r == color2.r && color1.g == color2.g && color1.b == color2.b));
+    assert(!(color2.r == color3.r && color2.g == color3.g && color2.b == color3.b));
+    
+    // All components should be valid
+    assert(color1.r >= 0 && color1.r <= 255);
+    assert(color1.g >= 0 && color1.g <= 255);
+    assert(color1.b >= 0 && color1.b <= 255);
+}
+
+// Test gradient presets
+TEST(gradient_presets) {
+    config_t config = {0};
+    
+    // Test rainbow preset
+    setup_gradient_preset(&config, GRADIENT_PRESET_RAINBOW);
+    assert(config.gradient_count == 6);
+    assert(config.use_gradient == 1);
+    assert(config.gradient_direction == GRADIENT_HORIZONTAL);
+    
+    // Test fire preset
+    setup_gradient_preset(&config, GRADIENT_PRESET_FIRE);
+    assert(config.gradient_count == 6);
+    assert(config.gradient_direction == GRADIENT_RADIAL);
+    
+    // Verify colors are different
+    assert(!(config.gradient_stops[0].r == config.gradient_stops[1].r &&
+             config.gradient_stops[0].g == config.gradient_stops[1].g &&
+             config.gradient_stops[0].b == config.gradient_stops[1].b));
+}
+
+// Test gradient color parsing
+TEST(gradient_color_parsing) {
+    config_t config = {0};
+    
+    // Test hex color parsing
+    parse_gradient_colors(&config, "#ff0000,#00ff00,#0000ff");
+    assert(config.gradient_count == 3);
+    assert(config.gradient_stops[0].r == 255);
+    assert(config.gradient_stops[0].g == 0);
+    assert(config.gradient_stops[0].b == 0);
+    assert(config.gradient_stops[1].r == 0);
+    assert(config.gradient_stops[1].g == 255);
+    assert(config.gradient_stops[1].b == 0);
+    
+    // Test named color parsing
+    config_t config2 = {0};
+    parse_gradient_colors(&config2, "red,green,blue");
+    assert(config2.gradient_count == 3);
+    assert(config2.gradient_stops[0].r == 255);
+    assert(config2.gradient_stops[0].g == 0);
+    assert(config2.gradient_stops[0].b == 0);
+}
+
+// Test auto gradient generation
+TEST(auto_gradient_generation) {
+    config_t config = {0};
+    
+    generate_auto_gradient(&config, 12345);
+    assert(config.gradient_count > 0);
+    assert(config.use_gradient == 1);
+    
+    // Should be deterministic with same seed
+    config_t config2 = {0};
+    generate_auto_gradient(&config2, 12345);
+    assert(config.gradient_count == config2.gradient_count);
+    assert(config.gradient_direction == config2.gradient_direction);
+}
+
+// Test background effects
+TEST(background_effects) {
+    config_t config = {0};
+    terminal_t term = {0};
+    init_terminal(&term);
+    term.canvas_width = 80;
+    term.canvas_height = 24;
+    
+    // Test that background render function doesn't crash
+    config.background_effect = BACKGROUND_STARS;
+    config.background_intensity = 50;
+    
+    // This should not crash
+    render_background(&term, &config, 0);
+    
+    // Test different background types
+    config.background_effect = BACKGROUND_MATRIX_RAIN;
+    render_background(&term, &config, 10);
+    
+    config.background_effect = BACKGROUND_PARTICLES;
+    render_background(&term, &config, 20);
+    
+    cleanup_terminal(&term);
+}
+
 int main() {
     printf("tte-c Unit Tests\n");
     printf("================\n");
@@ -504,6 +637,13 @@ int main() {
     RUN_TEST(crumble_effect);
     RUN_TEST(rings_effect);
     RUN_TEST(synthgrid_effect);
+    RUN_TEST(easing_functions);
+    RUN_TEST(hsv_color_conversion);
+    RUN_TEST(color_wheel);
+    RUN_TEST(gradient_presets);
+    RUN_TEST(gradient_color_parsing);
+    RUN_TEST(auto_gradient_generation);
+    RUN_TEST(background_effects);
     RUN_TEST(performance_comparison);
     
     printf("\nAll tests passed! ✅\n");

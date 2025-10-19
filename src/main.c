@@ -13,6 +13,11 @@ int main(int argc, char *argv[]) {
         .gradient_direction = GRADIENT_HORIZONTAL,
         .gradient_angle = 0.0f,
         .gradient_steps = 64,
+        .gradient_preset = GRADIENT_PRESET_CUSTOM,
+        .background_effect = BACKGROUND_NONE,
+        .background_intensity = 50,
+        .gradient_colors_string = NULL,
+        .auto_gradient = 0,
         .ignore_terminal_dimensions = 0,
         .wrap_text = 0,
         .tab_width = 4,
@@ -37,8 +42,20 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     
-    // Set up sophisticated gradients based on effect
-    setup_gradient_colors(&config, config.effect_name);
+    // Handle gradient options
+    if (config.auto_gradient) {
+        // Generate random gradient
+        generate_auto_gradient(&config, time(NULL));
+    } else if (config.gradient_preset != GRADIENT_PRESET_CUSTOM) {
+        // Use specified preset
+        setup_gradient_preset(&config, config.gradient_preset);
+    } else if (config.gradient_colors_string) {
+        // Parse custom colors
+        parse_gradient_colors(&config, config.gradient_colors_string);
+    } else {
+        // Set up sophisticated gradients based on effect (default behavior)
+        setup_gradient_colors(&config, config.effect_name);
+    }
     
     // Initialize terminal and read input
     init_terminal(&term);
@@ -71,6 +88,8 @@ int main(int argc, char *argv[]) {
     int max_frames = 1000; // Reasonable limit
     
     while (frame < max_frames) {
+        term.frame_count = frame; // Pass frame to terminal for background rendering
+        
         effect_func(&term, frame);
         
         // Check if animation is complete

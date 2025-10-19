@@ -43,6 +43,11 @@ A fast, lightweight C reimplementation of terminal text effects, providing the e
 - **Frame rate control** - Adjustable animation speed (1-1000 FPS)
 - **Canvas sizing** - Flexible width/height with auto-detection
 - **Memory efficient** - Static buffers, no dynamic allocation during animation
+- **Advanced easing** - 25+ easing functions (linear, quad, cubic, sine, bounce, elastic, back, etc.)
+- **HSV color system** - Full HSV color space support for vibrant gradients
+- **Color wheel generation** - Automatic rainbow and spectrum color generation
+- **Background animations** - 6 different background effects (stars, matrix, particles, grid, waves, plasma)
+- **Gradient presets** - 8 predefined color schemes plus custom color support
 
 ## Building
 
@@ -96,6 +101,17 @@ echo "No Colors" | ./tte-c --no-color --anchor-text nw typewriter
 - `--no-color` - Disable all colors
 - `-h, --help` - Show help message
 
+#### Advanced Gradient Options
+- `--gradient-preset <name>` - Use predefined gradient (rainbow,fire,ocean,sunset,forest,ice,neon,pastel)
+- `--gradient-colors <colors>` - Custom gradient colors (e.g., #ff0000,#00ff00,#0000ff or red,green,blue)
+- `--gradient-direction <dir>` - Gradient direction (horizontal,vertical,diagonal,radial,angle)
+- `--gradient-angle <deg>` - Gradient angle in degrees (0-360, used with angle direction)
+- `--auto-gradient` - Generate random gradient automatically
+
+#### Background Effects
+- `--background <effect>` - Background effect (stars,matrix,particles,grid,waves,plasma)
+- `--background-intensity <n>` - Background effect intensity (0-100, default: 50)
+
 ### Examples
 
 ```bash
@@ -131,6 +147,24 @@ echo "Liquid Flow" | ./tte-c pour
 echo "Black Hole" | ./tte-c --anchor-text c blackhole
 echo "Expanding Rings" | ./tte-c --anchor-text c rings
 echo "Synthwave Grid" | ./tte-c synthgrid
+
+# Advanced gradient effects
+echo "Rainbow Colors" | ./tte-c --gradient-preset rainbow beams
+echo "Fire Gradient" | ./tte-c --gradient-preset fire fireworks
+echo "Custom Colors" | ./tte-c --gradient-colors "#ff0000,#ffff00,#00ff00" waves
+echo "Auto Gradient" | ./tte-c --auto-gradient typewriter
+echo "Angled Gradient" | ./tte-c --gradient-direction angle --gradient-angle 45 slide
+
+# Background effects
+echo "Starfield" | ./tte-c --background stars --background-intensity 75 beams
+echo "Matrix Rain" | ./tte-c --background matrix typewriter
+echo "Floating Particles" | ./tte-c --background particles swarm
+echo "Grid Pattern" | ./tte-c --background grid synthgrid
+echo "Wave Background" | ./tte-c --background waves ocean
+echo "Plasma Effect" | ./tte-c --background plasma --background-intensity 60 unstable
+
+# Combined advanced effects
+echo "Ultimate" | ./tte-c --gradient-preset neon --background plasma --background-intensity 40 fireworks
 ```
 
 ## Remaining Features to Port
@@ -153,13 +187,13 @@ echo "Synthwave Grid" | ./tte-c synthgrid
 - ✅ `synthgrid` - Synthwave grid backgrounds **IMPLEMENTED**
 
 ### Advanced Features (Original tte)
-- ❌ **Easing functions** (25+ animation curves)
-- ❌ **Gradient generation** (RGB interpolation, color wheels)
+- ✅ **Easing functions** (25+ animation curves) **IMPLEMENTED**
+- ✅ **Gradient generation** (RGB interpolation, color wheels, HSV) **IMPLEMENTED**
 - ❌ **Character grouping** (words, lines, custom patterns)
 - ❌ **Advanced positioning** (bezier paths, orbits)
 - ❌ **Effect combinations** (layered effects)
 - ❌ **Input color preservation** (maintaining existing ANSI colors)
-- ❌ **Background effects** (canvas-wide animations)
+- ✅ **Background effects** (canvas-wide animations) **IMPLEMENTED**
 
 ### Command Line Options (Original tte)
 - ✅ `--anchor-canvas` / `--anchor-text` **IMPLEMENTED**

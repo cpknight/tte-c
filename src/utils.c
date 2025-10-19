@@ -38,6 +38,13 @@ void print_usage(const char *program_name) {
     printf("  --tab-width <width>       Set tab width (default: 4)\n");
     printf("  --xterm-colors            Force 8-bit color mode\n");
     printf("  --no-color                Disable all colors\n");
+    printf("  --gradient-preset <name>  Use gradient preset (rainbow,fire,ocean,sunset,forest,ice,neon,pastel)\n");
+    printf("  --gradient-colors <colors> Custom gradient colors (e.g., #ff0000,#00ff00,#0000ff)\n");
+    printf("  --gradient-direction <dir> Gradient direction (horizontal,vertical,diagonal,radial,angle)\n");
+    printf("  --gradient-angle <deg>    Gradient angle in degrees (0-360, used with angle direction)\n");
+    printf("  --background <effect>     Background effect (stars,matrix,particles,grid,waves,plasma)\n");
+    printf("  --background-intensity <n> Background effect intensity (0-100, default: 50)\n");
+    printf("  --auto-gradient           Generate random gradient automatically\n");
     printf("  -h, --help               Show this help message\n");
     printf("\nEffects:\n");
     printf("  beams     Light beams sweep across the text\n");
@@ -111,6 +118,56 @@ void parse_args(int argc, char *argv[], config_t *config) {
             config->xterm_colors = 1;
         } else if (strcmp(argv[i], "--no-color") == 0) {
             config->no_color = 1;
+        } else if (strcmp(argv[i], "--gradient-preset") == 0) {
+            if (i + 1 < argc) {
+                const char *preset = argv[++i];
+                if (strcmp(preset, "rainbow") == 0) config->gradient_preset = GRADIENT_PRESET_RAINBOW;
+                else if (strcmp(preset, "fire") == 0) config->gradient_preset = GRADIENT_PRESET_FIRE;
+                else if (strcmp(preset, "ocean") == 0) config->gradient_preset = GRADIENT_PRESET_OCEAN;
+                else if (strcmp(preset, "sunset") == 0) config->gradient_preset = GRADIENT_PRESET_SUNSET;
+                else if (strcmp(preset, "forest") == 0) config->gradient_preset = GRADIENT_PRESET_FOREST;
+                else if (strcmp(preset, "ice") == 0) config->gradient_preset = GRADIENT_PRESET_ICE;
+                else if (strcmp(preset, "neon") == 0) config->gradient_preset = GRADIENT_PRESET_NEON;
+                else if (strcmp(preset, "pastel") == 0) config->gradient_preset = GRADIENT_PRESET_PASTEL;
+            }
+        } else if (strcmp(argv[i], "--gradient-colors") == 0) {
+            if (i + 1 < argc) {
+                config->gradient_colors_string = argv[++i];
+            }
+        } else if (strcmp(argv[i], "--gradient-direction") == 0) {
+            if (i + 1 < argc) {
+                const char *direction = argv[++i];
+                if (strcmp(direction, "horizontal") == 0) config->gradient_direction = GRADIENT_HORIZONTAL;
+                else if (strcmp(direction, "vertical") == 0) config->gradient_direction = GRADIENT_VERTICAL;
+                else if (strcmp(direction, "diagonal") == 0) config->gradient_direction = GRADIENT_DIAGONAL;
+                else if (strcmp(direction, "radial") == 0) config->gradient_direction = GRADIENT_RADIAL;
+                else if (strcmp(direction, "angle") == 0) config->gradient_direction = GRADIENT_ANGLE;
+            }
+        } else if (strcmp(argv[i], "--gradient-angle") == 0) {
+            if (i + 1 < argc) {
+                config->gradient_angle = atof(argv[++i]);
+                if (config->gradient_angle < 0) config->gradient_angle = 0;
+                if (config->gradient_angle > 360) config->gradient_angle = 360;
+            }
+        } else if (strcmp(argv[i], "--background") == 0) {
+            if (i + 1 < argc) {
+                const char *bg = argv[++i];
+                if (strcmp(bg, "stars") == 0) config->background_effect = BACKGROUND_STARS;
+                else if (strcmp(bg, "matrix") == 0) config->background_effect = BACKGROUND_MATRIX_RAIN;
+                else if (strcmp(bg, "particles") == 0) config->background_effect = BACKGROUND_PARTICLES;
+                else if (strcmp(bg, "grid") == 0) config->background_effect = BACKGROUND_GRID;
+                else if (strcmp(bg, "waves") == 0) config->background_effect = BACKGROUND_WAVES;
+                else if (strcmp(bg, "plasma") == 0) config->background_effect = BACKGROUND_PLASMA;
+                else config->background_effect = BACKGROUND_NONE;
+            }
+        } else if (strcmp(argv[i], "--background-intensity") == 0) {
+            if (i + 1 < argc) {
+                config->background_intensity = atoi(argv[++i]);
+                if (config->background_intensity < 0) config->background_intensity = 0;
+                if (config->background_intensity > 100) config->background_intensity = 100;
+            }
+        } else if (strcmp(argv[i], "--auto-gradient") == 0) {
+            config->auto_gradient = 1;
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             print_usage(argv[0]);
             exit(0);
