@@ -1,6 +1,7 @@
 # :desktop_computer: `tte-c`
 
 A fast, lightweight C reimplementation of terminal text effects, providing the essential functionality of the Python `terminaltexteffects` library with significant performance improvements and precise output control.
+[![C/C++ CI](https://github.com/cpknight/tte-c/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/cpknight/tte-c/actions/workflows/c-cpp.yml)
 
 :information_source: _This is part of an "AI slop" porting experiment - testing methods leading to automated LLM-based software porting. Please reach out to [cpknight](mailto:chris@cpknight.io) for more information._
 
